@@ -134,9 +134,9 @@ class SingleChoice:
         if choice == 0: # Submit, not used
             return query.answer()
 
-        query.answer()
         router.deregister_handler(query.message.message_id)
-        self._callback(bot, update, id, username, choice)
+        ret = self._callback(bot, update, id, username, choice) or {}
+        query.answer(**ret)
         return 
 
 class MultipleChoice:
@@ -180,9 +180,9 @@ class MultipleChoice:
             return query.answer()
 
         if choice == 0: # Submit
-            query.answer()
             router.deregister_handler(original_message.message_id)
-            self._callback(bot, update, self._id, self._to, sorted(list(self._selections)))
+            ret = self._callback(bot, update, self._id, self._to, sorted(list(self._selections))) or {}
+            query.answer(**ret)
             return
 
         # toggle choice
