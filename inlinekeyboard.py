@@ -90,7 +90,7 @@ class SingleChoice:
         self._callback = result_callback
         self._candidate = candidate
         self._selection = {}
-        self._id = id or str(uuid.uuid4())
+        self._id = str(id or uuid.uuid4())
         self._blacklist = blacklist
         #import pdb; pdb.set_trace()
 
@@ -144,7 +144,7 @@ class MultipleChoice:
         self._callback = result_callback
         self._candidate = candidate
         self._selection = {}
-        self._id = id or str(uuid.uuid4())
+        self._id = str(id or uuid.uuid4())
         self._to = to
         self._selections = set()
 
