@@ -135,7 +135,7 @@ class SingleChoice:
             return query.answer()
 
         router.deregister_handler(query.message.message_id)
-        ret = self._callback(bot, update, id, username, choice) or {}
+        ret = self._callback(bot, update, id, username, self.candidate, choice) or {}
         query.answer(**ret)
         return 
 
@@ -181,7 +181,7 @@ class MultipleChoice:
 
         if choice == 0: # Submit
             router.deregister_handler(original_message.message_id)
-            ret = self._callback(bot, update, self._id, self._to, sorted(list(self._selections))) or {}
+            ret = self._callback(bot, update, self._id, self._to, self.candidate, sorted(list(self._selections))) or {}
             query.answer(**ret)
             return
 
@@ -234,7 +234,7 @@ class bb:
     def entry(self):
         SingleChoice(self.bot, self.m, self.entry_cb, ["Enter / Start"], None, blacklist=[], id=self.chat_id)
 
-    def entry_cb(self, bot, update, id, username, choice):
+    def entry_cb(self, bot, update, id, username, candidate, choice):
         import pdb; pdb.set_trace()
         self.players.append(username)
         if username == self.creator: # Game Owner
@@ -303,7 +303,7 @@ class bb:
         self.current_candidates = [x[:5] for x in self.players if x != self.players[self.knife]]
         MultipleChoice(bot, self.m, self.attack_cb, [ self.current_candidates + [E["give"]] ], self.players[self.knife], id=self.chat_id)
 
-    def attack_cb(self, bot, update, id, username, choices):
+    def attack_cb(self, bot, update, id, username, candidate, choices):
         message = update.callback_query.message
         if len(choices) == 2:
             pass;
@@ -325,7 +325,7 @@ class bb:
         SingleChoice(bot, self.m, self.interfere_cb, [E["interfere"], E["noop"]], self.players, blacklist=self.blacklist, id=self.chat_id)
 
 
-    def interfere_cb(self, bot, update, id, username, choice):
+    def interfere_cb(self, bot, update, id, username, candidate, choice):
         self.blacklist.append(username)
         if choice == 1:
             self.interfere_candidate.append(username)
@@ -352,7 +352,7 @@ class bb:
             )
             SingleChoice(bot, self.m, self.interfere_accept_cb, [self.interfere_candidate + [E["noop"]]], self.victim, id=self.chat_id)
 
-    def interfere_accept_cb(self, bot, update, id, username, choice):
+    def interfere_accept_cb(self, bot, update, id, username, candidate, choice):
         if choice - 1 < len(self.interfere_candidate):
             self.log.append("%s accepted %s's interference" % (self.victim, self.interfere_candidate[choice - 1]))
             self.victim = self.interfere_candidate[choice - 1]
@@ -367,7 +367,7 @@ class bb:
         SingleChoice(bot, self.m, self.attack_result_cb, [E["red"], E["blue"], E["white"], E["skill"]], self.victim, id=self.chat_id)
 
 
-    def attack_result_cb(self, bot, update, id, username, choice):
+    def attack_result_cb(self, bot, update, id, username, candidate, choice):
         choices = ["x", "c", "c", "w", "s"]
         redo = False
         if choices[choice] not in self.player_data[username]["token_available"]:
@@ -440,7 +440,7 @@ def info_button(bot, update):
         'show_alert': True,
     }
 
-def single_choice_cb(bot, update, id, username, choice):
+def single_choice_cb(bot, update, id, username, candidate, choice):
     message = update.callback_query.message
     bot.edit_message_text(
         text="@%s selected option %s" % (username, choice),
@@ -456,7 +456,7 @@ def single_choice_test(bot, update):
 
 user_l = ['Nakagawa_Kanon', 'ggplot2', 'harukaff_bot', 'Fake_Byakuya_bot']
 
-def single_choice_group_cb(bot, update, id, username, choice):
+def single_choice_group_cb(bot, update, id, username, candidate, choice):
     global user_l
     #import pdb; pdb.set_trace()
     message = update.callback_query.message
@@ -475,7 +475,7 @@ def single_choice_group_test(bot, update):
     m = update.message.reply_text("%s please select:" % ",".join(user_l))
     s = SingleChoice(bot, m, single_choice_group_cb, ['A', 'B', 'C', 'D'], user_l)
 
-def multiple_choice_cb(bot, update, id, username, choices):
+def multiple_choice_cb(bot, update, id, username, candidate, choices):
     message = update.callback_query.message
     bot.edit_message_text(
         text="@%s selected option %s" % (username, ", ".join(map(str, choices))),
@@ -490,7 +490,7 @@ def multiple_choice_test(bot, update):
 
 blacklist = []
 
-def enter_cb(bot, update, id, username, choice):
+def enter_cb(bot, update, id, username, candidate, choice):
     global blacklist
     message = update.callback_query.message
     if username == message.reply_to_message.from_user.username: # Game Owner
