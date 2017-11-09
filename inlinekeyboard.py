@@ -3,6 +3,8 @@
 
 import logging
 import uuid
+from operator import neg
+import random
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
 
@@ -135,7 +137,7 @@ class SingleChoice:
             return query.answer()
 
         router.deregister_handler(query.message.message_id)
-        ret = self._callback(bot, update, id, username, self.candidate, choice) or {}
+        ret = self._callback(bot, update, id, username, self._candidate, choice) or {}
         query.answer(**ret)
         return 
 
@@ -181,7 +183,7 @@ class MultipleChoice:
 
         if choice == 0: # Submit
             router.deregister_handler(original_message.message_id)
-            ret = self._callback(bot, update, self._id, self._to, self.candidate, sorted(list(self._selections))) or {}
+            ret = self._callback(bot, update, self._id, self._to, self._candidate, sorted(list(self._selections))) or {}
             query.answer(**ret)
             return
 
@@ -235,7 +237,6 @@ class bb:
         SingleChoice(self.bot, self.m, self.entry_cb, ["Enter / Start"], None, blacklist=[], id=self.chat_id)
 
     def entry_cb(self, bot, update, id, username, candidate, choice):
-        import pdb; pdb.set_trace()
         self.players.append(username)
         if username == self.creator: # Game Owner
             bot.edit_message_text(
@@ -261,8 +262,6 @@ class bb:
         redteam = [1]
         blueteam = [1]
         whiteteam = []
-        from operator import neg
-        import random
         x = range(2, 10)
         random.shuffle(x)
         if count % 2 == 1:
