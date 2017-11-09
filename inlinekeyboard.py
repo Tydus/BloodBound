@@ -239,7 +239,7 @@ class bb:
     def entry_cb(self, bot, update, id, username, candidate, choice):
         self.players.append(username)
         if username == self.creator: # Game Owner
-            bot.edit_message_text(
+            self.bot.edit_message_text(
                 text="Game started",
                 chat_id=self.m.chat_id,
                 message_id=self.m.message_id,
@@ -249,12 +249,12 @@ class bb:
             return 
 
         # import pdb; pdb.set_trace()
-        self.m = bot.edit_message_text(
+        self.m = self.bot.edit_message_text(
             text=self.m.text + "\n@%s entered the game" % username,
             chat_id=self.m.chat_id,
             message_id=self.m.message_id,
         )
-        s = SingleChoice(bot, self.m, self.entry_cb, ['Enter / Start'], None, blacklist=self.players, id=self.chat_id)
+        s = SingleChoice(self.bot, self.m, self.entry_cb, ['Enter / Start'], None, blacklist=self.players, id=self.chat_id)
 
     def shuffle_rank(self):
         count = len(self.players)
@@ -294,13 +294,13 @@ class bb:
         
     def round_start(self):
         self.log = []
-        self.m = bot.edit_message_text(
-            text=generate_game_message("%s action" % self.players[self.knife]),
+        self.m = self.bot.edit_message_text(
+            text=self.generate_game_message("%s action" % self.players[self.knife]),
             chat_id=self.m.chat_id,
             message_id=self.m.message_id,
         )
         self.current_candidates = [x[:5] for x in self.players if x != self.players[self.knife]]
-        MultipleChoice(bot, self.m, self.attack_cb, [ self.current_candidates + [E["give"]] ], self.players[self.knife], id=self.chat_id)
+        MultipleChoice(self.bot, self.m, self.attack_cb, [ self.current_candidates + [E["give"]] ], self.players[self.knife], id=self.chat_id)
 
     def attack_cb(self, bot, update, id, username, candidate, choices):
         message = update.callback_query.message
@@ -310,25 +310,25 @@ class bb:
             self.victim = self.current_candidates[choices[0] - 1]
             self.log += "%s is attacking %s" % (self.players[self.knife], self.victim)
         else:
-            MultipleChoice(bot, self.m, self.attack_cb, [ self.current_candidates + [E["give"]] ], self.players[self.knife], id=self.chat_id)
+            MultipleChoice(self.bot, self.m, self.attack_cb, [ self.current_candidates + [E["give"]] ], self.players[self.knife], id=self.chat_id)
 
 
     def interfere(self):
-        self.m = bot.edit_message_text(
-            text=generate_game_message("guard %s?" % self.victim),
+        self.m = self.bot.edit_message_text(
+            text=self.generate_game_message("guard %s?" % self.victim),
             chat_id=self.m.chat_id,
             message_id=self.m.message_id,
         )
         self.interfere_candidate = []
         self.blacklist = [self.players[self.knife], self.victim]
-        SingleChoice(bot, self.m, self.interfere_cb, [E["interfere"], E["noop"]], self.players, blacklist=self.blacklist, id=self.chat_id)
+        SingleChoice(self.bot, self.m, self.interfere_cb, [E["interfere"], E["noop"]], self.players, blacklist=self.blacklist, id=self.chat_id)
 
 
     def interfere_cb(self, bot, update, id, username, candidate, choice):
         self.blacklist.append(username)
         if choice == 1:
             self.interfere_candidate.append(username)
-        self.m = bot.edit_message_text(
+        self.m = self.bot.edit_message_text(
             text=self.m.text + "\n@%s chooses %s" % (username, "interfere" if choice == 1 else "noop"),
             chat_id=self.m.chat_id,
             message_id=self.m.message_id
@@ -337,33 +337,33 @@ class bb:
         if set(self.players) - set(self.blacklist) == set():
             interfere_decide()
             return
-        SingleChoice(bot, self.m, self.interfere_cb, [E["interfere"], E["noop"]], self.players, blacklist=self.blacklist, id=self.chat_id)
+        SingleChoice(self.bot, self.m, self.interfere_cb, [E["interfere"], E["noop"]], self.players, blacklist=self.blacklist, id=self.chat_id)
 
 
     def interfere_decide(self):
         if len(self.interfere_candidate) == 0:
             attack_result()
         else:
-            self.m = bot.edit_message_text(
-                text=generate_game_message("accept interfere?"),
+            self.m = self.bot.edit_message_text(
+                text=self.generate_game_message("accept interfere?"),
                 chat_id=self.m.chat_id,
                 message_id=self.m.message_id
             )
-            SingleChoice(bot, self.m, self.interfere_accept_cb, [self.interfere_candidate + [E["noop"]]], self.victim, id=self.chat_id)
+            SingleChoice(self.bot, self.m, self.interfere_accept_cb, [self.interfere_candidate + [E["noop"]]], self.victim, id=self.chat_id)
 
     def interfere_accept_cb(self, bot, update, id, username, candidate, choice):
         if choice - 1 < len(self.interfere_candidate):
             self.log.append("%s accepted %s's interference" % (self.victim, self.interfere_candidate[choice - 1]))
             self.victim = self.interfere_candidate[choice - 1]
-        attack_result()
+        self.attack_result()
 
     def attack_result(self):
-        self.m = bot.edit_message_text(
-                text=generate_game_message("%s select token:" % self.victim),
+        self.m = self.bot.edit_message_text(
+                text=self.generate_game_message("%s select token:" % self.victim),
                 chat_id=self.m.chat_id,
                 message_id=self.m.message_id
             )
-        SingleChoice(bot, self.m, self.attack_result_cb, [E["red"], E["blue"], E["white"], E["skill"]], self.victim, id=self.chat_id)
+        SingleChoice(self.bot, self.m, self.attack_result_cb, [E["red"], E["blue"], E["white"], E["skill"]], self.victim, id=self.chat_id)
 
 
     def attack_result_cb(self, bot, update, id, username, candidate, choice):
@@ -375,12 +375,12 @@ class bb:
             if (choice == 2 and self.player_data[username].rank > 0) or (choice == 1 and self.player_data[username].rank < 0):
                 redo = True
         if redo:
-            self.m = bot.edit_message_text(
-                text=generate_game_message("Invalid selection! %s select token:" % self.victim),
+            self.m = self.bot.edit_message_text(
+                text=self.generate_game_message("Invalid selection! %s select token:" % self.victim),
                 chat_id=self.m.chat_id,
                 message_id=self.m.message_id
             )
-            SingleChoice(bot, self.m, self.attack_result_cb, [E["red"], E["blue"], E["white"], E["skill"]], self.victim, id=self.chat_id)
+            SingleChoice(self.bot, self.m, self.attack_result_cb, [E["red"], E["blue"], E["white"], E["skill"]], self.victim, id=self.chat_id)
         else:
             if len(self.player_data[username]["token_available"]) == 0:
                 if abs(self.player_data[username]["rank"]) == 1:
@@ -398,8 +398,8 @@ class bb:
             round_start()
 
     def game_result(self, side):
-        self.m = bot.edit_message_text(
-            text=generate_game_message("%s wins!" % side),
+        self.m = self.bot.edit_message_text(
+            text=self.generate_game_message("%s wins!" % side),
             chat_id=self.m.chat_id,
             message_id=self.m.message_id
         )
