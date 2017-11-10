@@ -12,7 +12,8 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-E={'empty': '  ',
+E={
+   "empty": "🖌",
    'ok': '⭕️',
    'tick': '✔️',
    'info': 'ℹ️',
@@ -317,12 +318,13 @@ class bb:
         self.round_start()
         
     def round_start(self):
+        import pdb; pdb.set_trace()
         self.round += 1
         self.log = []
         self.current_candidates = [x[:5] for x in self.players if x != self.players[self.knife]]
         self.m = MultipleChoice(
             self.bot, self.m, self.attack_cb,
-            [ self.current_candidates + [E["give"]] ],
+            self.current_candidates + [E["give"]],
             self.players[self.knife],
             id=self.chat_id,
             text=self.generate_game_message("%s action" % self.players[self.knife]),
@@ -332,13 +334,13 @@ class bb:
         message = update.callback_query.message
         if len(choices) == 2:
             pass;
-        elif len(choices) == 1 and choices[0] - 1 < len(self.candidates):
+        elif len(choices) == 1 and choices[0] - 1 < len(self.current_candidates):
             self.victim = self.current_candidates[choices[0] - 1]
             self.log += "%s is attacking %s" % (self.players[self.knife], self.victim)
         else:
             self.m = MultipleChoice(
                 self.bot, self.m, self.attack_cb,
-                [ self.current_candidates + [E["give"]] ],
+                self.current_candidates + [E["give"]],
                 self.players[self.knife],
                 id=self.chat_id,
             ).message
@@ -383,7 +385,7 @@ class bb:
         else:
             self.m = SingleChoice(
                 self.bot, self.m, self.interfere_accept_cb,
-                [self.interfere_candidate + [E["noop"]]],
+                self.interfere_candidate + [E["noop"]],
                 self.victim,
                 id=self.chat_id,
                 text=self.generate_game_message("accept interfere?"),
@@ -447,7 +449,7 @@ class bb:
 
     def generate_game_message(self, notice): 
         # log + status + notice
-        msg = "round %d\n" % self.round + "\n".join(self.log) + "\n\n"
+        msg = u"round %d\n" % self.round + "\n".join(self.log) + "\n\n"
         for player, data in self.player_data.iteritems():
             msg += "%s" % (player + "          ")[:5]
             for t in data["token"]:
