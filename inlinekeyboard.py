@@ -408,7 +408,7 @@ class bb:
     def generate_game_message(self, notice): 
         # log + status + notice
         msg = "round %d\n" % self.round + "\n".join(self.log) + "\n\n"
-        for player, data in self.player_data:
+        for player, data in self.player_data.iteritems():
             msg += "%s" % (player + "          ")[:5]
             for t in data["token"]:
                 if t == "r": msg += E["red"]
