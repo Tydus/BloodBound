@@ -12,7 +12,28 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-E={'ok': '⭕️', 'tick': '✔️', 'info': 'ℹ️'}
+E={'ok': '⭕️',
+   'tick': '✔️',
+   'info': 'ℹ️',
+   "red": "🔴",
+   "blue": "🔵",
+   "white": "⚪️",
+   "1": "1️⃣",
+   "2": "2️⃣",
+   "3": "3️⃣",
+   "4": "4️⃣",
+   "5": "5️⃣",
+   "6": "6️⃣",
+   "7": "7️⃣",
+   "8": "8️⃣",
+   "9": "9️⃣",
+   "0": "*️⃣",
+   "give": "↪️",
+   "skill": "💢",
+   "interfere": "⚠️",
+   "noop": "🔜 ",
+   "reserved": "🖌🗡🛡🔱🔰🔮💢♨️㊙️"
+}
 
 def _make_keyboard(buttons):
     return InlineKeyboardMarkup([buttons[i : i + 3] for i in range(0, len(buttons), 3)])
