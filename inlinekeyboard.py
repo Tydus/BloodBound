@@ -88,7 +88,7 @@ class CallbackQueryRouter:
 router = CallbackQueryRouter()
 
 class SingleChoice:
-    def __init__(self, bot, original_message, result_callback, candidate, to, blacklist=None, id=None):
+    def __init__(self, bot, original_message, result_callback, candidate, to, blacklist=None, id=None, text=None):
         self._callback = result_callback
         self._candidate = candidate
         self._selection = {}
@@ -109,13 +109,14 @@ class SingleChoice:
             static_buttons=static_btn_mgr(self._id),
         )
 
-        bot.edit_message_text(
-            text=original_message.text,
+        router.register_handler(original_message.message_id, self.handle)
+
+        self.message = bot.edit_message_text(
+            text=text or original_message.text,
             chat_id=original_message.chat_id,
             message_id=original_message.message_id,
             reply_markup=reply_markup,
         )
-        router.register_handler(original_message.message_id, self.handle)
 
     def handle(self, bot, update, id, choice):
         query = update.callback_query
@@ -142,7 +143,7 @@ class SingleChoice:
         return 
 
 class MultipleChoice:
-    def __init__(self, bot, original_message, result_callback, candidate, to, id=None):
+    def __init__(self, bot, original_message, result_callback, candidate, to, id=None, text=None):
         self._callback = result_callback
         self._candidate = candidate
         self._selection = {}
@@ -156,13 +157,14 @@ class MultipleChoice:
             static_buttons=[self._submit_button()] + static_btn_mgr(self._id),
         )
 
-        bot.edit_message_text(
-            text=original_message.text,
+        router.register_handler(original_message.message_id, self.handle)
+
+        self.message = bot.edit_message_text(
+            text=text or original_message.text,
             chat_id=original_message.chat_id,
             message_id=original_message.message_id,
             reply_markup=reply_markup,
         )
-        router.register_handler(original_message.message_id, self.handle)
 
     def _submit_button(self):
         return InlineKeyboardButton(E['ok'], callback_data="%s#0" % self._id)
@@ -234,7 +236,7 @@ class bb:
         self.entry()
 
     def entry(self):
-        SingleChoice(self.bot, self.m, self.entry_cb, ["Enter / Start"], None, blacklist=[], id=self.chat_id)
+        self.m = SingleChoice(self.bot, self.m, self.entry_cb, ["Enter / Start"], None, blacklist=[], id=self.chat_id).message
 
     def entry_cb(self, bot, update, id, username, candidate, choice):
         self.players.append(username)
@@ -249,12 +251,13 @@ class bb:
             return 
 
         # import pdb; pdb.set_trace()
-        self.m = self.bot.edit_message_text(
+        self.m = SingleChoice(
+            self.bot, self.m, self.entry_cb,
+            ['Enter / Start'],
+            None, blacklist=self.players,
+            id=self.chat_id,
             text=self.m.text + "\n@%s entered the game" % username,
-            chat_id=self.m.chat_id,
-            message_id=self.m.message_id,
-        )
-        s = SingleChoice(self.bot, self.m, self.entry_cb, ['Enter / Start'], None, blacklist=self.players, id=self.chat_id)
+        ).message
 
     def shuffle_rank(self):
         count = len(self.players)
@@ -294,13 +297,14 @@ class bb:
         
     def round_start(self):
         self.log = []
-        self.m = self.bot.edit_message_text(
-            text=self.generate_game_message("%s action" % self.players[self.knife]),
-            chat_id=self.m.chat_id,
-            message_id=self.m.message_id,
-        )
         self.current_candidates = [x[:5] for x in self.players if x != self.players[self.knife]]
-        MultipleChoice(self.bot, self.m, self.attack_cb, [ self.current_candidates + [E["give"]] ], self.players[self.knife], id=self.chat_id)
+        self.m = MultipleChoice(
+            self.bot, self.m, self.attack_cb,
+            [ self.current_candidates + [E["give"]] ],
+            self.players[self.knife],
+            id=self.chat_id,
+            text=self.generate_game_message("%s action" % self.players[self.knife]),
+        ).message
 
     def attack_cb(self, bot, update, id, username, candidate, choices):
         message = update.callback_query.message
@@ -310,18 +314,23 @@ class bb:
             self.victim = self.current_candidates[choices[0] - 1]
             self.log += "%s is attacking %s" % (self.players[self.knife], self.victim)
         else:
-            MultipleChoice(self.bot, self.m, self.attack_cb, [ self.current_candidates + [E["give"]] ], self.players[self.knife], id=self.chat_id)
-
+            self.m = MultipleChoice(
+                self.bot, self.m, self.attack_cb,
+                [ self.current_candidates + [E["give"]] ],
+                self.players[self.knife],
+                id=self.chat_id,
+            ).message
 
     def interfere(self):
-        self.m = self.bot.edit_message_text(
-            text=self.generate_game_message("guard %s?" % self.victim),
-            chat_id=self.m.chat_id,
-            message_id=self.m.message_id,
-        )
         self.interfere_candidate = []
         self.blacklist = [self.players[self.knife], self.victim]
-        SingleChoice(self.bot, self.m, self.interfere_cb, [E["interfere"], E["noop"]], self.players, blacklist=self.blacklist, id=self.chat_id)
+        self.m = SingleChoice(
+            self.bot, self.m, self.interfere_cb,
+            [E["interfere"], E["noop"]],
+            self.players, blacklist=self.blacklist,
+            id=self.chat_id,
+            text=self.generate_game_message("guard %s?" % self.victim),
+        ).message
 
 
     def interfere_cb(self, bot, update, id, username, candidate, choice):
@@ -337,19 +346,26 @@ class bb:
         if set(self.players) - set(self.blacklist) == set():
             interfere_decide()
             return
-        SingleChoice(self.bot, self.m, self.interfere_cb, [E["interfere"], E["noop"]], self.players, blacklist=self.blacklist, id=self.chat_id)
+
+        self.m = SingleChoice(
+            self.bot, self.m, self.interfere_cb,
+            [E["interfere"], E["noop"]],
+            self.players, blacklist=self.blacklist,
+            id=self.chat_id,
+        ).message
 
 
     def interfere_decide(self):
         if len(self.interfere_candidate) == 0:
             attack_result()
         else:
-            self.m = self.bot.edit_message_text(
+            self.m = SingleChoice(
+                self.bot, self.m, self.interfere_accept_cb,
+                [self.interfere_candidate + [E["noop"]]],
+                self.victim,
+                id=self.chat_id,
                 text=self.generate_game_message("accept interfere?"),
-                chat_id=self.m.chat_id,
-                message_id=self.m.message_id
-            )
-            SingleChoice(self.bot, self.m, self.interfere_accept_cb, [self.interfere_candidate + [E["noop"]]], self.victim, id=self.chat_id)
+            ).message
 
     def interfere_accept_cb(self, bot, update, id, username, candidate, choice):
         if choice - 1 < len(self.interfere_candidate):
@@ -358,12 +374,13 @@ class bb:
         self.attack_result()
 
     def attack_result(self):
-        self.m = self.bot.edit_message_text(
-                text=self.generate_game_message("%s select token:" % self.victim),
-                chat_id=self.m.chat_id,
-                message_id=self.m.message_id
-            )
-        SingleChoice(self.bot, self.m, self.attack_result_cb, [E["red"], E["blue"], E["white"], E["skill"]], self.victim, id=self.chat_id)
+        self.m = SingleChoice(
+            self.bot, self.m, self.attack_result_cb,
+            [E["red"], E["blue"], E["white"], E["skill"]],
+            self.victim,
+            id=self.chat_id,
+            text=self.generate_game_message("%s select token:" % self.victim),
+        ).message
 
 
     def attack_result_cb(self, bot, update, id, username, candidate, choice):
@@ -375,12 +392,13 @@ class bb:
             if (choice == 2 and self.player_data[username].rank > 0) or (choice == 1 and self.player_data[username].rank < 0):
                 redo = True
         if redo:
-            self.m = self.bot.edit_message_text(
+            self.m = SingleChoice(
+                self.bot, self.m, self.attack_result_cb,
+                [E["red"], E["blue"], E["white"], E["skill"]],
+                self.victim,
+                id=self.chat_id,
                 text=self.generate_game_message("Invalid selection! %s select token:" % self.victim),
-                chat_id=self.m.chat_id,
-                message_id=self.m.message_id
-            )
-            SingleChoice(self.bot, self.m, self.attack_result_cb, [E["red"], E["blue"], E["white"], E["skill"]], self.victim, id=self.chat_id)
+            ).message
         else:
             if len(self.player_data[username]["token_available"]) == 0:
                 if abs(self.player_data[username]["rank"]) == 1:
@@ -525,6 +543,8 @@ instances = {}
 
 def start_game(bot, update):
     cid = update.message.chat_id
+    i = instances.get(cid)
+    if i: i.cancel()
     instances[cid] = bb(bot, update, cid)
 
 def main():
@@ -534,10 +554,10 @@ def main():
     updater.dispatcher.add_handler(CommandHandler('start', help))
     updater.dispatcher.add_handler(CommandHandler('help', help))
     updater.dispatcher.add_handler(CallbackQueryHandler(router))
-    updater.dispatcher.add_handler(CommandHandler('single_choice', single_choice_test))
-    updater.dispatcher.add_handler(CommandHandler('single_choice_group', single_choice_group_test))
-    updater.dispatcher.add_handler(CommandHandler('multiple_choice', multiple_choice_test))
-    updater.dispatcher.add_handler(CommandHandler('enter', enter_test))
+    #updater.dispatcher.add_handler(CommandHandler('single_choice', single_choice_test))
+    #updater.dispatcher.add_handler(CommandHandler('single_choice_group', single_choice_group_test))
+    #updater.dispatcher.add_handler(CommandHandler('multiple_choice', multiple_choice_test))
+    #updater.dispatcher.add_handler(CommandHandler('enter', enter_test))
     updater.dispatcher.add_handler(CommandHandler('start_game', start_game))
     updater.dispatcher.add_error_handler(error)
 
