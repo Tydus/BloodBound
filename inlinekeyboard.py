@@ -12,7 +12,8 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
                     level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-E={'ok': '⭕️',
+E={'empty': '  ',
+   'ok': '⭕️',
    'tick': '✔️',
    'info': 'ℹ️',
    "red": "🔴",
@@ -115,7 +116,6 @@ class SingleChoice:
         self._selection = {}
         self._id = str(id or uuid.uuid4())
         self._blacklist = blacklist
-        #import pdb; pdb.set_trace()
 
         if type(to) == list:
             self._to = to
@@ -271,7 +271,6 @@ class bb:
             self.prepare_game()
             return 
 
-        # import pdb; pdb.set_trace()
         self.m = SingleChoice(
             self.bot, self.m, self.entry_cb,
             ['Enter / Start'],
@@ -290,15 +289,16 @@ class bb:
         random.shuffle(x)
         if count % 2 == 1:
             whiteteam.append(0)
-        count -= 1
-        redteam += x[:count / 2 - 1]
-        random.shuffle(x)
-        x.remove(3)
-        if 3 not in redteam:
-            blueteam += x[:count / 2 - 1]
-        else:
-            blueteam.append(3)
-            blueteam += x[:count / 2 - 2]
+            count -= 1
+        if count > 2:
+            redteam += x[:count / 2 - 1]
+            random.shuffle(x)
+            x.remove(3)
+            if 3 not in redteam:
+                blueteam += x[:count / 2 - 1]
+            else:
+                blueteam.append(3)
+                blueteam += x[:count / 2 - 2]
         res = map(neg, blueteam) + redteam + whiteteam
         random.shuffle(res)
         print(len(res), res)
@@ -312,11 +312,12 @@ class bb:
             self.player_data[p] = {"rank": r, "token": [], "token_available": token_list[abs(r)], "item": []}
         print(self.player_data)
         # self.bm.add(E['info'], self.info_button)
-        self.knife = random.randint(0, len(self.players))
-        self.round = 1
+        self.knife = random.randint(0, len(self.players) - 1)
+        self.round = 0
         self.round_start()
         
     def round_start(self):
+        self.round += 1
         self.log = []
         self.current_candidates = [x[:5] for x in self.players if x != self.players[self.knife]]
         self.m = MultipleChoice(
