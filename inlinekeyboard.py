@@ -456,9 +456,10 @@ class bb:
                 elif t == "w": msg += E["white"]
                 else: msg += E[str(abs(data["rank"]))]
             msg += E["empty"] * (3 - len(data["token"]))
-            msg += [E[i] for i in data["item"]]
+            msg += "".join([E[i] for i in data["item"]])
             msg += "\n\n"
         msg += notice
+        return msg
 
     def info_button(self, bot, update):
         query = update.callback_query
@@ -540,7 +541,6 @@ def enter_cb(bot, update, id, username, candidate, choice):
         )
         return 
 
-    import pdb; pdb.set_trace()
     blacklist.append(username)
     message = bot.edit_message_text(
         text=message.text + "\n@%s entered the game" % username,
