@@ -391,10 +391,19 @@ class bb:
     def interfere(self):
         self.interfere_candidate = []
         self.blacklist = [self.knife, self.victim]
+        for player, data in self.player_data.iteritems():
+            if player == self.knife or player == self.victim:
+                continue
+            if "s" in data["token_available"]:
+                self.interfere_candidate.append(player)
+            else:
+                self.blacklist.append(player)
+        if len(self.interfere_candidate) == 0:
+            attack_result()
         self.m = SingleChoice(
             self.bot, self.m, self.interfere_cb,
             [E["interfere"], E["noop"]],
-            self.players, blacklist=self.blacklist,
+            self.interfere_candidate, blacklist=self.blacklist,
             id=self.chat_id,
             text=self.generate_game_message("Guard %s?" % self.victim),
         ).message
@@ -402,21 +411,21 @@ class bb:
 
     def interfere_cb(self, bot, update, id, username, candidate, choice):
         self.blacklist.append(username)
-        if choice == 1:
-            self.interfere_candidate.append(username)
+        if choice == 2:
+            self.interfere_candidate.remove(username)
 
         self.log.append("@%s chooses %s" % (username, "interfere" if choice == 1 else "no-op"))
 
         self.display_game_message()
 
-        if set(self.players) - set(self.blacklist) == set():
+        if set(self.interfere_candidate) + set(self.blacklist) == set(self.players):
             interfere_decide()
             return
 
         self.m = SingleChoice(
             self.bot, self.m, self.interfere_cb,
             [E["interfere"], E["noop"]],
-            self.players, blacklist=self.blacklist,
+            self.interfere_candidate, blacklist=self.blacklist,
             id=self.chat_id,
         ).message
 
