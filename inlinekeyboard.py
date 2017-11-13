@@ -5,7 +5,7 @@ import logging
 import uuid
 from operator import neg
 import random
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -13,28 +13,28 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 logger = logging.getLogger(__name__)
 
 E={
-   "empty": "🖌",
-   'ok': '⭕️',
-   'tick': '✔️',
-   'info': 'ℹ️',
-   "red": "🔴",
-   "blue": "🔵",
-   "white": "⚪️",
-   "1": "1️⃣",
-   "2": "2️⃣",
-   "3": "3️⃣",
-   "4": "4️⃣",
-   "5": "5️⃣",
-   "6": "6️⃣",
-   "7": "7️⃣",
-   "8": "8️⃣",
-   "9": "9️⃣",
-   "0": "*️⃣",
-   "give": "↪️",
-   "skill": "💢",
-   "interfere": "⚠️",
-   "noop": "🔜 ",
-   "reserved": "🖌🗡🛡🔱🔰🔮💢♨️㊙️"
+   "empty": u"⚫️",
+   'ok': u'⭕️',
+   'tick': u'✔️',
+   'info': u'ℹ️',
+   "red": u"🔴",
+   "blue": u"🔵",
+   "white": u"⚪️",
+   "1": u"1️⃣",
+   "2": u"2️⃣",
+   "3": u"3️⃣",
+   "4": u"4️⃣",
+   "5": u"5️⃣",
+   "6": u"6️⃣",
+   "7": u"7️⃣",
+   "8": u"8️⃣",
+   "9": u"9️⃣",
+   "0": u"*️⃣",
+   "give": u"↪️",
+   "skill": u"💢",
+   "interfere": u"⚠️",
+   "noop": u"🔜 ",
+   "reserved": u"🖌🗡🛡🔱🔰🔮💢♨️㊙️"
 }
 
 def _make_keyboard(buttons):
@@ -43,7 +43,7 @@ def _make_keyboard(buttons):
 def _make_choice_keyboard(id, choices, selection=[], static_buttons=[]):
     ret = []
     for n, i in enumerate(choices):
-        text = E['tick'] if n + 1 in selection else i
+        text = E['tick'] if n + 1 in selection else i[:20]
 
         ret.append(InlineKeyboardButton(text, callback_data="%s#%d" % (id, n + 1)))
 
@@ -89,9 +89,13 @@ class CallbackQueryRouter:
         del self._db[message_id]
 
     def __call__(self, bot, update):
-        print update
         query = update.callback_query
         message = query.message
+        print "Answer for message %s from %s: %s" % (
+            query.message.message_id,
+            query.from_user.username,
+            query.data,
+        )
 
         try:
             id, choice = query.data.split('#')
@@ -111,7 +115,7 @@ class CallbackQueryRouter:
 router = CallbackQueryRouter()
 
 class SingleChoice:
-    def __init__(self, bot, original_message, result_callback, candidate, to, blacklist=None, id=None, text=None):
+    def __init__(self, bot, original_message, result_callback, candidate, to, blacklist=None, id=None, text=None, newmessage=False):
         self._callback = result_callback
         self._candidate = candidate
         self._selection = {}
@@ -131,14 +135,22 @@ class SingleChoice:
             static_buttons=static_btn_mgr(self._id),
         )
 
-        router.register_handler(original_message.message_id, self.handle)
+        if newmessage:
+            self.message = original_message.reply_text(
+                text=text or original_message.text,
+                parse_mode=ParseMode.HTML,
+                reply_markup=reply_markup,
+            )
+        else:
+            self.message = bot.edit_message_text(
+                text=text or original_message.text,
+                chat_id=original_message.chat_id,
+                message_id=original_message.message_id,
+                parse_mode=ParseMode.HTML,
+                reply_markup=reply_markup,
+            )
 
-        self.message = bot.edit_message_text(
-            text=text or original_message.text,
-            chat_id=original_message.chat_id,
-            message_id=original_message.message_id,
-            reply_markup=reply_markup,
-        )
+        router.register_handler(self.message.message_id, self.handle)
 
     def handle(self, bot, update, id, choice):
         query = update.callback_query
@@ -165,7 +177,7 @@ class SingleChoice:
         return 
 
 class MultipleChoice:
-    def __init__(self, bot, original_message, result_callback, candidate, to, id=None, text=None):
+    def __init__(self, bot, original_message, result_callback, candidate, to, id=None, text=None, newmessage=False):
         self._callback = result_callback
         self._candidate = candidate
         self._selection = {}
@@ -179,14 +191,22 @@ class MultipleChoice:
             static_buttons=[self._submit_button()] + static_btn_mgr(self._id),
         )
 
-        router.register_handler(original_message.message_id, self.handle)
+        if newmessage:
+            self.message = original_message.reply_text(
+                text=text or original_message.text,
+                parse_mode=ParseMode.HTML,
+                reply_markup=reply_markup,
+            )
+        else:
+            self.message = bot.edit_message_text(
+                text=text or original_message.text,
+                chat_id=original_message.chat_id,
+                message_id=original_message.message_id,
+                parse_mode=ParseMode.HTML,
+                reply_markup=reply_markup,
+            )
 
-        self.message = bot.edit_message_text(
-            text=text or original_message.text,
-            chat_id=original_message.chat_id,
-            message_id=original_message.message_id,
-            reply_markup=reply_markup,
-        )
+        router.register_handler(self.message.message_id, self.handle)
 
     def _submit_button(self):
         return InlineKeyboardButton(E['ok'], callback_data="%s#0" % self._id)
@@ -223,10 +243,11 @@ class MultipleChoice:
             static_buttons=[self._submit_button()] + static_btn_mgr(self._id),
         )
 
-        bot.edit_message_text(
+        self.message = bot.edit_message_text(
             text=original_message.text,
             chat_id=original_message.chat_id,
             message_id=original_message.message_id,
+            parse_mode=ParseMode.HTML,
             reply_markup=reply_markup,
         )
 
@@ -252,7 +273,8 @@ class bb:
         self.chat_id = chat_id
         self.bot = bot
         self.creator = update.message.from_user.username
-        self.m = update.message.reply_text("game starting")
+        self.log = ["Game starting"]
+        self.m = update.message.reply_text(self.log[0], parse_mode=ParseMode.HTML,)
         self.players = []
         self.log = []
         self.entry()
@@ -267,17 +289,20 @@ class bb:
                 text="Game started",
                 chat_id=self.m.chat_id,
                 message_id=self.m.message_id,
+                parse_mode=ParseMode.HTML,
             )
             # self.players.append(self.creator)
             self.prepare_game()
             return 
+
+        self.log.append("@%s entered the game" % username)
 
         self.m = SingleChoice(
             self.bot, self.m, self.entry_cb,
             ['Enter / Start'],
             None, blacklist=self.players,
             id=self.chat_id,
-            text=self.m.text + "\n@%s entered the game" % username,
+            text="\n".join(self.log)
         ).message
 
     def shuffle_rank(self):
@@ -313,47 +338,65 @@ class bb:
             self.player_data[p] = {"rank": r, "token": [], "token_available": token_list[abs(r)], "item": []}
         print(self.player_data)
         # self.bm.add(E['info'], self.info_button)
-        self.knife = random.randint(0, len(self.players) - 1)
+        self.knife = self.players[random.randint(0, len(self.players) - 1)]
         self.round = 0
         self.round_start()
         
     def round_start(self):
-        import pdb; pdb.set_trace()
         self.round += 1
         self.log = []
-        self.current_candidates = [x[:5] for x in self.players if x != self.players[self.knife]]
+        candidate = [x for x in self.players if x != self.knife] + [E['give']]
         self.m = MultipleChoice(
             self.bot, self.m, self.attack_cb,
-            self.current_candidates + [E["give"]],
-            self.players[self.knife],
+            candidate,
+            self.knife,
             id=self.chat_id,
-            text=self.generate_game_message("%s action" % self.players[self.knife]),
+            text=self.generate_game_message("%s action" % self.knife),
+            newmessage=True,
         ).message
 
     def attack_cb(self, bot, update, id, username, candidate, choices):
         message = update.callback_query.message
-        if len(choices) == 2:
-            pass;
-        elif len(choices) == 1 and choices[0] - 1 < len(self.current_candidates):
-            self.victim = self.current_candidates[choices[0] - 1]
-            self.log += "%s is attacking %s" % (self.players[self.knife], self.victim)
-        else:
+
+        try:
+            if len(choices) == 0 or len(choices) > 2: 1 / 0
+
+            victim = choices[0] - 1
+            if victim >= len(candidate) - 1: 1 / 0 # Don't count "Give"
+            victim = candidate[victim]
+
+            if len(choices) == 1: # Attack!
+                self.victim = victim
+                self.log.append("%s is attacking %s" % (self.knife, self.victim))
+                return self.interfere()
+
+            # possibly give knife
+            if choices[1] - 1 != len(candidate) - 1: 1 / 0
+
+            old_knife, self.knife = self.knife, victim
+            self.log.append("%s gaves the knife to %s." % (old_knife, self.knife))
+            self.display_game_message()
+
+            return self.round_start()
+
+        except ZeroDivisionError:
             self.m = MultipleChoice(
                 self.bot, self.m, self.attack_cb,
-                self.current_candidates + [E["give"]],
-                self.players[self.knife],
+                candidate,
+                self.knife,
                 id=self.chat_id,
+                text=self.generate_game_message("%s action invalid, retry:" % self.knife)
             ).message
 
     def interfere(self):
         self.interfere_candidate = []
-        self.blacklist = [self.players[self.knife], self.victim]
+        self.blacklist = [self.knife, self.victim]
         self.m = SingleChoice(
             self.bot, self.m, self.interfere_cb,
             [E["interfere"], E["noop"]],
             self.players, blacklist=self.blacklist,
             id=self.chat_id,
-            text=self.generate_game_message("guard %s?" % self.victim),
+            text=self.generate_game_message("Guard %s?" % self.victim),
         ).message
 
 
@@ -361,11 +404,10 @@ class bb:
         self.blacklist.append(username)
         if choice == 1:
             self.interfere_candidate.append(username)
-        self.m = self.bot.edit_message_text(
-            text=self.m.text + "\n@%s chooses %s" % (username, "interfere" if choice == 1 else "noop"),
-            chat_id=self.m.chat_id,
-            message_id=self.m.message_id
-        )
+
+        self.log.append("@%s chooses %s" % (username, "interfere" if choice == 1 else "no-op"))
+
+        self.display_game_message()
 
         if set(self.players) - set(self.blacklist) == set():
             interfere_decide()
@@ -378,10 +420,9 @@ class bb:
             id=self.chat_id,
         ).message
 
-
     def interfere_decide(self):
         if len(self.interfere_candidate) == 0:
-            attack_result()
+            self.attack_result()
         else:
             self.m = SingleChoice(
                 self.bot, self.m, self.interfere_accept_cb,
@@ -437,31 +478,42 @@ class bb:
                         game_result("Blue")
             self.player_data[username]["token_available"].remove(choices[choice])
             self.player_data[username]["token"].append(choices[choice])
+            self.knife = self.victim
             round_start()
 
     def game_result(self, side):
+        self.display_game_message("%s wins!" % side)
+
+    def display_game_message(self, notice=""):
         self.m = self.bot.edit_message_text(
-            text=self.generate_game_message("%s wins!" % side),
+            text=self.generate_game_message(notice),
             chat_id=self.m.chat_id,
-            message_id=self.m.message_id
+            message_id=self.m.message_id,
+            parse_mode=ParseMode.HTML,
         )
 
-
-    def generate_game_message(self, notice): 
+    def generate_game_message(self, notice=""): 
         # log + status + notice
-        msg = u"round %d\n" % self.round + "\n".join(self.log) + "\n\n"
+
+        l = [u"<b>round %d</b>" % self.round]
+        l += self.log
+        l.append("")
+
         for player, data in self.player_data.iteritems():
-            msg += "%s" % (player + "          ")[:5]
+            ret = "<pre>%s</pre>" % (player + "             ")[:8]
             for t in data["token"]:
-                if t == "r": msg += E["red"]
-                elif t == "b": msg += E["blue"]
-                elif t == "w": msg += E["white"]
-                else: msg += E[str(abs(data["rank"]))]
-            msg += E["empty"] * (3 - len(data["token"]))
-            msg += "".join([E[i] for i in data["item"]])
-            msg += "\n\n"
-        msg += notice
-        return msg
+                ret += E[{
+                    "r": "red", "b": "blue", "w": "white"
+                }.get(t, str(abs(data["rank"])))]
+
+            ret += E["empty"] * (3 - len(data["token"]))
+            ret += "".join([E[i] for i in data["item"]])
+            l.append(ret)
+
+        if notice:
+            l.append(u"<b>%s</b>" % notice)
+
+        return u"\n".join(l)
 
     def info_button(self, bot, update):
         query = update.callback_query
@@ -471,8 +523,6 @@ class bb:
             "show_alert": True
         }
 
-        
-
 def info_button(bot, update):
     query = update.callback_query
     username = query.from_user.username
@@ -481,80 +531,6 @@ def info_button(bot, update):
             'text': u'This is a private info page, exclusive to @%s.\nLegend: 🔪🔴⚪️9️⃣🗡🛡🔒🔑📍' % username,
         'show_alert': True,
     }
-
-def single_choice_cb(bot, update, id, username, candidate, choice):
-    message = update.callback_query.message
-    bot.edit_message_text(
-        text="@%s selected option %s" % (username, choice),
-        chat_id=message.chat_id,
-        message_id=message.message_id,
-    )
-
-def single_choice_test(bot, update):
-    username = update.message.from_user.username
-    m = update.message.reply_text("%s please select:" % username)
-    s = SingleChoice(bot, m, single_choice_cb, ['A', 'B', 'C', 'D'], username)
-
-
-user_l = ['Nakagawa_Kanon', 'ggplot2', 'harukaff_bot', 'Fake_Byakuya_bot']
-
-def single_choice_group_cb(bot, update, id, username, candidate, choice):
-    global user_l
-    #import pdb; pdb.set_trace()
-    message = update.callback_query.message
-    message = bot.edit_message_text(
-        text=message.text + "\n@%s selected option %s" % (username, choice),
-        chat_id=message.chat_id,
-        message_id=message.message_id,
-    )
-    user_l.remove(username)
-    if user_l != []:
-        s = SingleChoice(bot, message, single_choice_group_cb, ['A', 'B', 'C', 'D'], user_l, id=id)
-
-def single_choice_group_test(bot, update):
-    global user_l
-    user_l = ['Nakagawa_Kanon', 'ggplot2', 'harukaff_bot']
-    m = update.message.reply_text("%s please select:" % ",".join(user_l))
-    s = SingleChoice(bot, m, single_choice_group_cb, ['A', 'B', 'C', 'D'], user_l)
-
-def multiple_choice_cb(bot, update, id, username, candidate, choices):
-    message = update.callback_query.message
-    bot.edit_message_text(
-        text="@%s selected option %s" % (username, ", ".join(map(str, choices))),
-        chat_id=message.chat_id,
-        message_id=message.message_id,
-    )
-
-def multiple_choice_test(bot, update):
-    username = update.message.from_user.username
-    m = update.message.reply_text("%s please select more than one:" % username)
-    s = MultipleChoice(bot, m, multiple_choice_cb, ['A', 'B', 'C', 'D', '1', '2', '3', '4'], username)
-
-blacklist = []
-
-def enter_cb(bot, update, id, username, candidate, choice):
-    global blacklist
-    message = update.callback_query.message
-    if username == message.reply_to_message.from_user.username: # Game Owner
-        bot.edit_message_text(
-            text="Game started",
-            chat_id=message.chat_id,
-            message_id=message.message_id,
-        )
-        return 
-
-    blacklist.append(username)
-    message = bot.edit_message_text(
-        text=message.text + "\n@%s entered the game" % username,
-        chat_id=message.chat_id,
-        message_id=message.message_id,
-    )
-    s = SingleChoice(bot, message, enter_cb, ['Enter'], None, blacklist=blacklist, id=id)
-
-def enter_test(bot, update):
-    username = update.message.from_user.username
-    m = update.message.reply_text("%s is calling for players, press button to enter (%s press button to start the game):" % (username, username))
-    s = SingleChoice(bot, m, enter_cb, ['Enter'], None)
 
 def help(bot, update):
     update.message.reply_text("Use /start to test this bot.")
