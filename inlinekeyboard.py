@@ -76,8 +76,6 @@ class StaticButtonManager:
             **self._db[choice]['callback'](bot, update)
         )
 
-static_btn_mgr = StaticButtonManager()
-
 class CallbackQueryRouter:
     def __init__(self):
         self._db = {}
@@ -115,12 +113,13 @@ class CallbackQueryRouter:
 router = CallbackQueryRouter()
 
 class SingleChoice:
-    def __init__(self, bot, original_message, result_callback, candidate, to, blacklist=None, id=None, text=None, newmessage=False):
+    def __init__(self, bot, original_message, result_callback, candidate, to, blacklist=None, id=None, text=None, newmessage=False, static_btn_mgr=StaticButtonManager()):
         self._callback = result_callback
         self._candidate = candidate
         self._selection = {}
         self._id = str(id or uuid.uuid4())
         self._blacklist = blacklist
+        self._sbm = static_btn_mgr
 
         if type(to) == list:
             self._to = to
@@ -132,7 +131,7 @@ class SingleChoice:
         reply_markup = _make_choice_keyboard(self._id,
             candidate,
             selection=[],
-            static_buttons=static_btn_mgr(self._id),
+            static_buttons=self._sbm(self._id),
         )
 
         if newmessage:
@@ -177,18 +176,19 @@ class SingleChoice:
         return 
 
 class MultipleChoice:
-    def __init__(self, bot, original_message, result_callback, candidate, to, id=None, text=None, newmessage=False):
+    def __init__(self, bot, original_message, result_callback, candidate, to, id=None, text=None, newmessage=False, static_btn_mgr=StaticButtonManager()):
         self._callback = result_callback
         self._candidate = candidate
         self._selection = {}
         self._id = str(id or uuid.uuid4())
         self._to = to
         self._selections = set()
+        self._sbm = static_btn_mgr
 
         reply_markup = _make_choice_keyboard(self._id,
             self._candidate,
             selection=[],
-            static_buttons=[self._submit_button()] + static_btn_mgr(self._id),
+            static_buttons=[self._submit_button()] + self._sbm(self._id),
         )
 
         if newmessage:
@@ -277,10 +277,11 @@ class bb:
         self.m = update.message.reply_text(self.log[0], parse_mode=ParseMode.HTML,)
         self.players = []
         self.log = []
+        self.sbm = StaticButtonManager()
         self.entry()
 
     def entry(self):
-        self.m = SingleChoice(self.bot, self.m, self.entry_cb, ["Enter / Start"], None, blacklist=[], id=self.chat_id).message
+        self.m = SingleChoice(self.bot, self.m, self.entry_cb, ["Enter / Start"], None, blacklist=[], id=self.chat_id, static_btn_mgr=self.sbm).message
 
     def entry_cb(self, bot, update, id, username, candidate, choice):
         self.players.append(username)
@@ -302,6 +303,7 @@ class bb:
             ['Enter / Start'],
             None, blacklist=self.players,
             id=self.chat_id,
+            static_btn_mgr=self.sbm,
             text="\n".join(self.log)
         ).message
 
@@ -337,7 +339,7 @@ class bb:
         for p, r in zip(self.players, ranks):
             self.player_data[p] = {"rank": r, "token": [], "token_available": token_list[abs(r)], "item": []}
         print(self.player_data)
-        # self.bm.add(E['info'], self.info_button)
+        self.sbm.add(E['info'], self.info_button)
         self.knife = self.players[random.randint(0, len(self.players) - 1)]
         self.round = 0
         self.round_start()
@@ -351,6 +353,7 @@ class bb:
             candidate,
             self.knife,
             id=self.chat_id,
+            static_btn_mgr=self.sbm,
             text=self.generate_game_message("%s action" % self.knife),
             newmessage=True,
         ).message
@@ -385,6 +388,7 @@ class bb:
                 candidate,
                 self.knife,
                 id=self.chat_id,
+                static_btn_mgr=self.sbm,
                 text=self.generate_game_message("%s action invalid, retry:" % self.knife)
             ).message
 
@@ -398,13 +402,16 @@ class bb:
                 self.interfere_candidate.append(player)
             else:
                 self.blacklist.append(player)
+
         if len(self.interfere_candidate) == 0:
-            attack_result()
+            return self.attack_result()
+
         self.m = SingleChoice(
             self.bot, self.m, self.interfere_cb,
             [E["interfere"], E["noop"]],
             self.interfere_candidate, blacklist=self.blacklist,
             id=self.chat_id,
+            static_btn_mgr=self.sbm,
             text=self.generate_game_message("Guard %s?" % self.victim),
         ).message
 
@@ -419,7 +426,7 @@ class bb:
         self.display_game_message()
 
         if set(self.interfere_candidate) + set(self.blacklist) == set(self.players):
-            interfere_decide()
+            self.interfere_decide()
             return
 
         self.m = SingleChoice(
@@ -427,17 +434,19 @@ class bb:
             [E["interfere"], E["noop"]],
             self.interfere_candidate, blacklist=self.blacklist,
             id=self.chat_id,
+            static_btn_mgr=self.sbm,
         ).message
 
     def interfere_decide(self):
         if len(self.interfere_candidate) == 0:
-            self.attack_result()
+            return self.attack_result()
         else:
             self.m = SingleChoice(
                 self.bot, self.m, self.interfere_accept_cb,
                 self.interfere_candidate + [E["noop"]],
                 self.victim,
                 id=self.chat_id,
+                static_btn_mgr=self.sbm,
                 text=self.generate_game_message("accept interfere?"),
             ).message
 
@@ -453,9 +462,9 @@ class bb:
             [E["red"], E["blue"], E["white"], E["skill"]],
             self.victim,
             id=self.chat_id,
+            static_btn_mgr=self.sbm,
             text=self.generate_game_message("%s select token:" % self.victim),
         ).message
-
 
     def attack_result_cb(self, bot, update, id, username, candidate, choice):
         choices = ["x", "c", "c", "w", "s"]
@@ -471,6 +480,7 @@ class bb:
                 [E["red"], E["blue"], E["white"], E["skill"]],
                 self.victim,
                 id=self.chat_id,
+                static_btn_mgr=self.sbm,
                 text=self.generate_game_message("Invalid selection! %s select token:" % self.victim),
             ).message
         else:
@@ -570,7 +580,6 @@ def main():
     updater.dispatcher.add_handler(CommandHandler('start_game', start_game))
     updater.dispatcher.add_error_handler(error)
 
-    static_btn_mgr.add(E['info'], info_button)
     # Start the Bot
     updater.start_polling()
 
