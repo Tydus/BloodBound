@@ -347,7 +347,7 @@ class bb:
         # random.shuffle(self.players)
         ranks = self.shuffle_rank()
         for p, r in zip(self.players, ranks):
-            self.player_data[p] = {"rank": r, "token": [], "token_available": token_list[abs(r)], "item": []}
+            self.player_data[p] = {"rank": r, "token": [], "token_available": token_list[abs(r)][:], "item": []}
         print(self.player_data)
         self.sbm.add(E['info'], self.info_button)
         self.knife = self.players[random.randint(0, len(self.players) - 1)]
@@ -479,10 +479,11 @@ class bb:
     def attack_result_cb(self, bot, update, id, username, candidate, choice):
         choices = ["x", "c", "c", "w", "s"]
         redo = False
+        # import pdb; pdb.set_trace()
         if choices[choice] not in self.player_data[username]["token_available"]:
             redo = True
         if choices[choice] == "c":
-            if (choice == 2 and self.player_data[username].rank > 0) or (choice == 1 and self.player_data[username].rank < 0):
+            if (choice == 2 and self.player_data[username]["rank"] > 0) or (choice == 1 and self.player_data[username]["rank"] < 0):
                 redo = True
         if redo:
             self.m = SingleChoice(
@@ -505,10 +506,14 @@ class bb:
                         game_result("Red")
                     else:
                         game_result("Blue")
+            token = self.token_convert_single(self.player_data[self.victim]["rank"], choice)
+            self.log.append("%s selected %s token" % (self.victim, token[1]))
+            self.display_game_message()
             self.player_data[username]["token_available"].remove(choices[choice])
-            self.player_data[username]["token"].append(choices[choice])
+            self.player_data[username]["token"].append(token[0])
             self.knife = self.victim
-            round_start()
+            self.debug()
+            self.round_start()
 
     def game_result(self, side):
         self.display_game_message("%s wins!" % side)
@@ -547,11 +552,51 @@ class bb:
     def info_button(self, bot, update):
         query = update.callback_query
         username = query.from_user.username
+        rank = self.player_data[username]["rank"]
+        if rank > 0:
+            player_faction = E["red"]
+        elif rank < 0:
+            player_faction = E["blue"]
+        else:
+            player_faction = E["white"]
+        token_list = self.token_convert(rank)
+        before_index = self.players.index(username) - 1
+        if before_index < 0: before_index = len(self.players) - 1
+        player_before = self.players[before_index]
+        before_faction = E[['red', 'blue'][(rank > 0) ^ (abs(rank) == 3)]]
 
         return {
-                'text': u'This is a private info page, exclusive to @%s.\nLegend: 🔪🔴⚪️9️⃣🗡🛡🔒🔑📍' % username,
+                'text': u'%s. you are %s %s, the player before you %s is %s' % (username, player_faction, "".join(token_list), player_before, before_faction),
             'show_alert': True,
         }
+
+    def token_convert(self, rank):
+        red = {"c": E["red"], "s": E[str(abs(rank))], "w": E["white"]}
+        blue = {"c": E["blue"], "s": E[str(abs(rank))], "w": E["white"]}
+        raw_token = token_list[abs(rank)]
+        if rank > 0:
+            return map(lambda x: red[x], raw_token)
+        elif rank < 0:
+            return map(lambda x: blue[x], raw_token)
+        else:
+            return [E["black"], E["black"], E["0"]]
+
+    def token_convert_single(self, rank, choice):
+        red = {1: ("r", E["red"]), 2: ("r", E["red"]), 4: ("s", E[str(abs(rank))]), 3: ("w", E["white"])}
+        blue = {1: ("b", E["blue"]), 2: ("b", E["blue"]), 4: ("s", E[str(abs(rank))]), 3: ("w", E["white"])}
+        white = {1: ("r", E["red"]), 2: ("b", E["blue"]), 4: ("s", E[str(abs(rank))]), 3: ("w", E["white"])}
+        if rank > 0:
+            return red[choice]
+        elif rank < 0:
+            return blue[choice]
+        else:
+            return white[choice]
+
+
+    def debug(self):
+        from pprint import pprint
+        pprint(self.player_data)
+
 
 def help(bot, update):
     update.message.reply_text("Use /start to test this bot.")
