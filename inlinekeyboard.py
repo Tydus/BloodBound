@@ -7,6 +7,7 @@ from operator import neg
 import random
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
+from telegram.error import BadRequest
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -130,6 +131,7 @@ class SingleChoice:
         self._id = str(id or uuid.uuid4())
         self._blacklist = blacklist
         self._sbm = static_btn_mgr
+        self.message = original_message
 
         if type(to) == list:
             self._to = to
@@ -146,8 +148,8 @@ class SingleChoice:
 
         try:
             if newmessage:
-                self.message = original_message.reply_text(
-                    text=text or original_message.text,
+                self.message = self.message.reply_text(
+                    text=text or self.message.text,
                     parse_mode=ParseMode.HTML,
                     reply_markup=reply_markup,
                 )
@@ -199,6 +201,7 @@ class MultipleChoice:
         self._to = to
         self._selections = set()
         self._sbm = static_btn_mgr
+        self.message = original_message
 
         reply_markup = _make_choice_keyboard(self._id,
             self._candidate,
@@ -208,8 +211,8 @@ class MultipleChoice:
 
         try:
             if newmessage:
-                self.message = original_message.reply_text(
-                    text=text or original_message.text,
+                self.message = self.message.reply_text(
+                    text=text or self.message.text,
                     parse_mode=ParseMode.HTML,
                     reply_markup=reply_markup,
                 )
