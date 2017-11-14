@@ -50,9 +50,10 @@ def _make_choice_keyboard(id, choices, selection=[], static_buttons=[]):
     return _make_keyboard(ret + static_buttons)
 
 class StaticButtonManager:
-    def __init__(self, id):
+    def __init__(self, id=None):
         self._id = str(id or uuid.uuid4())
         self._db = []
+        router.register_static_handler(self._id, self.handle)
 
     def add(self, text, callback):
         self._db.append({'text': text, 'callback': callback})
@@ -66,7 +67,7 @@ class StaticButtonManager:
 
         return ret
 
-    def __call__(self, bot, update, id, choice):
+    def handle(self, bot, update, id, choice):
         query = update.callback_query
 
         choice = -choice - 1
@@ -82,11 +83,17 @@ class CallbackQueryRouter:
         self._db = {}
         self._static_db = {}
 
-    def register_handler(self, message_id, handler, static=False):
-        (self._static_db if static else self._db)[message_id] = handler
+    def register_handler(self, message_id, handler):
+        self._db[message_id] = handler
 
-    def deregister_handler(self, message_id, static=False):
-        del (self._static_db if static else self._db)[message_id]
+    def deregister_handler(self, message_id):
+        del self._db[message_id]
+
+    def register_static_handler(self, group_id, handler):
+        self._static_db[group_id] = handler
+
+    def deregister_static_handler(self, group_id):
+        del self._static_db[group_id]
 
     def __call__(self, bot, update):
         query = update.callback_query
@@ -105,11 +112,10 @@ class CallbackQueryRouter:
             return query.answer()
 
         if choice < 0: # Static buttons
-            db = self._static_db
+            handler = self._static_db.get(id)
         else:
-            db = self._db
+            handler = self._db.get(message.message_id)
 
-        handler = db.get(message.message_id)
         if not handler:
             return query.answer()
         return handler(bot, update, id, choice)
