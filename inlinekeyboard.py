@@ -7,7 +7,7 @@ from operator import neg
 import random
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
-from telegram.error import BadRequest
+# from telegram.error import BadRequest
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
@@ -163,7 +163,7 @@ class SingleChoice:
                     parse_mode=ParseMode.HTML,
                     reply_markup=reply_markup,
                 )
-        except BadRequest:
+        except:
             pass
 
         router.register_handler(self.message.message_id, self.handle)
@@ -226,7 +226,7 @@ class MultipleChoice:
                     parse_mode=ParseMode.HTML,
                     reply_markup=reply_markup,
                 )
-        except BadRequest:
+        except:
             pass
 
         router.register_handler(self.message.message_id, self.handle)
@@ -270,7 +270,7 @@ class MultipleChoice:
             self.message = self.message.edit_reply_markup(
                 reply_markup=reply_markup,
             )
-        except BadRequest:
+        except:
             pass
 
 # Tests
@@ -476,6 +476,17 @@ class bb:
         self.attack_result()
 
     def attack_result(self):
+        if len(self.player_data[self.victim]["token_available"]) == 0:
+            if abs(self.player_data[self.victim]["rank"]) == 1:
+                if self.player_data[self.victim]["rank"] > 0:
+                    self.game_result("Blue")
+                else:
+                    self.game_result("Red")
+            else:
+                if self.player_data[self.victim]["rank"] > 0:
+                    self.game_result("Red")
+                else:
+                    self.game_result("Blue")
         self.m = SingleChoice(
             self.bot, self.m, self.attack_result_cb,
             [E["red"], E["blue"], E["white"], E["skill"]],
@@ -504,17 +515,7 @@ class bb:
                 text=self.generate_game_message("Invalid selection! %s select token:" % self.victim),
             ).message
         else:
-            if len(self.player_data[username]["token_available"]) == 0:
-                if abs(self.player_data[username]["rank"]) == 1:
-                    if self.player_data[username]["rank"] > 0:
-                        game_result("Blue")
-                    else:
-                        game_result("Red")
-                else:
-                    if self.player_data[username]["rank"] > 0:
-                        game_result("Red")
-                    else:
-                        game_result("Blue")
+            
             token = self.token_convert_single(self.player_data[self.victim]["rank"], choice)
             self.log.append("%s selected %s token" % (self.victim, token[1]))
             self.display_game_message()
