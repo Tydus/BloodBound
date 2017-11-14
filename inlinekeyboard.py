@@ -144,20 +144,25 @@ class SingleChoice:
             static_buttons=self._sbm.buttons(),
         )
 
-        if newmessage:
-            self.message = original_message.reply_text(
-                text=text or original_message.text,
-                parse_mode=ParseMode.HTML,
-                reply_markup=reply_markup,
-            )
-        else:
-            self.message = bot.edit_message_text(
-                text=text or original_message.text,
-                chat_id=original_message.chat_id,
-                message_id=original_message.message_id,
-                parse_mode=ParseMode.HTML,
-                reply_markup=reply_markup,
-            )
+        try:
+            if newmessage:
+                self.message = original_message.reply_text(
+                    text=text or original_message.text,
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=reply_markup,
+                )
+            elif text == None:
+                self.message = self.message.edit_reply_markup(
+                    reply_markup=reply_markup,
+                )
+            else: # text != None
+                self.message = self.message.edit_text(
+                    text=text or original_message.text,
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=reply_markup,
+                )
+        except BadRequest:
+            pass
 
         router.register_handler(self.message.message_id, self.handle)
 
@@ -201,20 +206,25 @@ class MultipleChoice:
             static_buttons=[self._submit_button()] + self._sbm.buttons(),
         )
 
-        if newmessage:
-            self.message = original_message.reply_text(
-                text=text or original_message.text,
-                parse_mode=ParseMode.HTML,
-                reply_markup=reply_markup,
-            )
-        else:
-            self.message = bot.edit_message_text(
-                text=text or original_message.text,
-                chat_id=original_message.chat_id,
-                message_id=original_message.message_id,
-                parse_mode=ParseMode.HTML,
-                reply_markup=reply_markup,
-            )
+        try:
+            if newmessage:
+                self.message = original_message.reply_text(
+                    text=text or original_message.text,
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=reply_markup,
+                )
+            elif text == None:
+                self.message = self.message.edit_reply_markup(
+                    reply_markup=reply_markup,
+                )
+            else: # text != None
+                self.message = self.message.edit_text(
+                    text=text or original_message.text,
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=reply_markup,
+                )
+        except BadRequest:
+            pass
 
         router.register_handler(self.message.message_id, self.handle)
 
@@ -253,13 +263,12 @@ class MultipleChoice:
             static_buttons=[self._submit_button()] + self._sbm.buttons(),
         )
 
-        self.message = bot.edit_message_text(
-            text=original_message.text,
-            chat_id=original_message.chat_id,
-            message_id=original_message.message_id,
-            parse_mode=ParseMode.HTML,
-            reply_markup=reply_markup,
-        )
+        try:
+            self.message = self.message.edit_reply_markup(
+                reply_markup=reply_markup,
+            )
+        except BadRequest:
+            pass
 
 # Tests
 
@@ -296,13 +305,10 @@ class bb:
     def entry_cb(self, bot, update, id, username, candidate, choice):
         self.players.append(username)
         if username == self.creator: # Game Owner
-            self.bot.edit_message_text(
+            self.m.edit_text(
                 text="Game started",
-                chat_id=self.m.chat_id,
-                message_id=self.m.message_id,
                 parse_mode=ParseMode.HTML,
             )
-            # self.players.append(self.creator)
             self.prepare_game()
             return 
 
@@ -519,10 +525,8 @@ class bb:
         self.display_game_message("%s wins!" % side)
 
     def display_game_message(self, notice=""):
-        self.m = self.bot.edit_message_text(
+        self.m = self.m.edit_text(
             text=self.generate_game_message(notice),
-            chat_id=self.m.chat_id,
-            message_id=self.m.message_id,
             parse_mode=ParseMode.HTML,
         )
 
@@ -566,7 +570,7 @@ class bb:
         before_faction = E[['red', 'blue'][(rank > 0) ^ (abs(rank) == 3)]]
 
         return {
-                'text': u'%s. you are %s %s, the player before you %s is %s' % (username, player_faction, "".join(token_list), player_before, before_faction),
+            'text': u'%s. you are %s %s, the player before you %s is %s' % (username, player_faction, "".join(token_list), player_before, before_faction),
             'show_alert': True,
         }
 
