@@ -50,22 +50,23 @@ def _make_choice_keyboard(id, choices, selection=[], static_buttons=[]):
     return _make_keyboard(ret + static_buttons)
 
 class StaticButtonManager:
-    def __init__(self):
+    def __init__(self, id):
+        self._id = str(id or uuid.uuid4())
         self._db = []
 
     def add(self, text, callback):
         self._db.append({'text': text, 'callback': callback})
 
-    def __call__(self, id):
+    def buttons(self):
         ret = []
         for n, i in enumerate(self._db):
             ret.append(InlineKeyboardButton(
-                text=i['text'], callback_data='%s#%d' % (id, -n - 1),
+                text=i['text'], callback_data='%s#%d' % (self._id, -n - 1),
             ))
 
         return ret
 
-    def handle(self, bot, update, id, choice):
+    def __call__(self, bot, update, id, choice):
         query = update.callback_query
 
         choice = -choice - 1
@@ -79,12 +80,13 @@ class StaticButtonManager:
 class CallbackQueryRouter:
     def __init__(self):
         self._db = {}
+        self._static_db = {}
 
-    def register_handler(self, message_id, handler):
-        self._db[message_id] = handler
+    def register_handler(self, message_id, handler, static=False):
+        (self._static_db if static else self._db)[message_id] = handler
 
-    def deregister_handler(self, message_id):
-        del self._db[message_id]
+    def deregister_handler(self, message_id, static=False):
+        del (self._static_db if static else self._db)[message_id]
 
     def __call__(self, bot, update):
         query = update.callback_query
@@ -103,9 +105,11 @@ class CallbackQueryRouter:
             return query.answer()
 
         if choice < 0: # Static buttons
-            return static_btn_mgr.handle(bot, update, id, choice)
+            db = self._static_db
+        else:
+            db = self._db
 
-        handler = self._db.get(message.message_id)
+        handler = db.get(message.message_id)
         if not handler:
             return query.answer()
         return handler(bot, update, id, choice)
@@ -131,7 +135,7 @@ class SingleChoice:
         reply_markup = _make_choice_keyboard(self._id,
             candidate,
             selection=[],
-            static_buttons=self._sbm(self._id),
+            static_buttons=self._sbm.buttons(),
         )
 
         if newmessage:
@@ -188,7 +192,7 @@ class MultipleChoice:
         reply_markup = _make_choice_keyboard(self._id,
             self._candidate,
             selection=[],
-            static_buttons=[self._submit_button()] + self._sbm(self._id),
+            static_buttons=[self._submit_button()] + self._sbm.buttons(),
         )
 
         if newmessage:
@@ -240,7 +244,7 @@ class MultipleChoice:
         reply_markup = _make_choice_keyboard(self._id,
             self._candidate,
             selection=self._selections,
-            static_buttons=[self._submit_button()] + static_btn_mgr(self._id),
+            static_buttons=[self._submit_button()] + self._sbm.buttons(),
         )
 
         self.message = bot.edit_message_text(
@@ -537,19 +541,11 @@ class bb:
     def info_button(self, bot, update):
         query = update.callback_query
         username = query.from_user.username
+
         return {
-            "text": "test",
-            "show_alert": True
+                'text': u'This is a private info page, exclusive to @%s.\nLegend: 🔪🔴⚪️9️⃣🗡🛡🔒🔑📍' % username,
+            'show_alert': True,
         }
-
-def info_button(bot, update):
-    query = update.callback_query
-    username = query.from_user.username
-
-    return {
-            'text': u'This is a private info page, exclusive to @%s.\nLegend: 🔪🔴⚪️9️⃣🗡🛡🔒🔑📍' % username,
-        'show_alert': True,
-    }
 
 def help(bot, update):
     update.message.reply_text("Use /start to test this bot.")
