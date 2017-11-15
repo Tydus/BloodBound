@@ -479,14 +479,15 @@ class bb:
         if len(self.player_data[self.victim]["token_available"]) == 0:
             if abs(self.player_data[self.victim]["rank"]) == 1:
                 if self.player_data[self.victim]["rank"] > 0:
-                    self.game_result("Blue")
+                    return self.game_result(E("blue"))
                 else:
-                    self.game_result("Red")
+                    return self.game_result(E("red"))
             else:
                 if self.player_data[self.victim]["rank"] > 0:
-                    self.game_result("Red")
+                    return self.game_result(E("red"))
                 else:
-                    self.game_result("Blue")
+                    return self.game_result(E("blue"))
+
         self.m = SingleChoice(
             self.bot, self.m, self.attack_result_cb,
             [E["red"], E["blue"], E["white"], E["skill"]],
@@ -542,7 +543,7 @@ class bb:
         l.append("")
 
         for player, data in self.player_data.iteritems():
-            ret = "<pre>%s</pre>" % (player + "             ")[:8]
+            ret = "%s" % (player + "             ")[:8]
             for t in data["token"]:
                 ret += E[{
                     "r": "red", "b": "blue", "w": "white"
@@ -550,7 +551,7 @@ class bb:
 
             ret += E["empty"] * (3 - len(data["token"]))
             ret += "".join([E[i] for i in data["item"]])
-            l.append(ret)
+            l.append(u"<pre>%s</pre>" % ret)
 
         if notice:
             l.append(u"<b>%s</b>" % notice)
@@ -560,21 +561,35 @@ class bb:
     def info_button(self, bot, update):
         query = update.callback_query
         username = query.from_user.username
-        rank = self.player_data[username]["rank"]
+
+        data = self.player_data.get(username)
+        if not data:
+            return {'text': '@%s: you are not in this game, please wait for the next game.' % username, 'show_alert': True}
+
+        ret = []
+        ret.append(u"Player %s" % username)
+
+        rank = data["rank"]
         if rank > 0:
             player_faction = E["red"]
         elif rank < 0:
             player_faction = E["blue"]
         else:
             player_faction = E["white"]
-        token_list = self.token_convert(rank)
-        before_index = self.players.index(username) - 1
-        if before_index < 0: before_index = len(self.players) - 1
-        player_before = self.players[before_index]
-        before_faction = E[['red', 'blue'][(rank > 0) ^ (abs(rank) == 3)]]
+        ret.append(u"Faction %s" % player_faction)
+
+        ret.append(u"Available token %s" % "".join(self.token_convert(rank)))
+
+        my_index = self.players.index(username)
+        after_index = (my_index + 1) % len(self.players)
+        player_after = self.players[after_index]
+        after_faction = E[['red', 'blue'][(rank > 0) ^ (abs(rank) == 3)]]
+        ret.append(u"Next player (%s) is %s" % (player_after, after_faction))
+
+        # TODO: rank 3 can check player cards
 
         return {
-            'text': u'%s. you are %s %s, the player before you %s is %s' % (username, player_faction, "".join(token_list), player_before, before_faction),
+            'text': u"\n".join(ret),
             'show_alert': True,
         }
 
