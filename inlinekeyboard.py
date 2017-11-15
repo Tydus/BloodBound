@@ -431,7 +431,7 @@ class bb:
             self.interfere_candidate, blacklist=self.blacklist,
             id=self.chat_id,
             static_btn_mgr=self.sbm,
-            text=self.generate_game_message("Guard %s?" % self.victim),
+            text=self.generate_game_message("%s: Guard %s?" % (", ".join(self.interfere_candidate), self.victim)),
         ).message
 
 
@@ -444,7 +444,10 @@ class bb:
 
         self.display_game_message()
 
-        if set(self.players) - set(self.interfere_candidate) == set(self.blacklist):
+        print(self.players)
+        print(self.blacklist)
+        print(set(self.players) - set(self.blacklist))
+        if set(self.players) - set(self.blacklist) == set():
             self.interfere_decide()
             return
 
@@ -454,6 +457,7 @@ class bb:
             self.interfere_candidate, blacklist=self.blacklist,
             id=self.chat_id,
             static_btn_mgr=self.sbm,
+            text=self.generate_game_message("%s: Guard %s?" % (", ".join(set(self.players) - set(self.blacklist)), self.victim)),
         ).message
 
     def interfere_decide(self):
