@@ -444,7 +444,7 @@ class bb:
 
         self.display_game_message()
 
-        if set(self.interfere_candidate) + set(self.blacklist) == set(self.players):
+        if set(self.players) - set(self.interfere_candidate) == set(self.blacklist):
             self.interfere_decide()
             return
 
