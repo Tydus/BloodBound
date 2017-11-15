@@ -622,24 +622,20 @@ def start_game(bot, update):
     instances[cid] = bb(bot, update, cid)
 
 def main():
-    # Create the Updater and pass it your bot's token.
     updater = Updater("483679321:AAG9x30HL-o4UEIt5dn7tDgYTjsucx2YhWw")
 
     updater.dispatcher.add_handler(CommandHandler('start', help))
     updater.dispatcher.add_handler(CommandHandler('help', help))
     updater.dispatcher.add_handler(CallbackQueryHandler(router))
-    #updater.dispatcher.add_handler(CommandHandler('single_choice', single_choice_test))
-    #updater.dispatcher.add_handler(CommandHandler('single_choice_group', single_choice_group_test))
-    #updater.dispatcher.add_handler(CommandHandler('multiple_choice', multiple_choice_test))
-    #updater.dispatcher.add_handler(CommandHandler('enter', enter_test))
     updater.dispatcher.add_handler(CommandHandler('start_game', start_game))
     updater.dispatcher.add_error_handler(error)
 
-    # Start the Bot
-    updater.start_polling()
+    updater.start_polling(
+        clean=True,
+        timeout=5,
+        read_latency=5,
+    )
 
-    # Run the bot until the user presses Ctrl-C or the process receives SIGINT,
-    # SIGTERM or SIGABRT
     updater.idle()
 
 
