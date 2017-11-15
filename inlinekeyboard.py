@@ -479,14 +479,14 @@ class bb:
         if len(self.player_data[self.victim]["token_available"]) == 0:
             if abs(self.player_data[self.victim]["rank"]) == 1:
                 if self.player_data[self.victim]["rank"] > 0:
-                    return self.game_result(E("blue"))
+                    return self.game_result(E["blue"])
                 else:
-                    return self.game_result(E("red"))
+                    return self.game_result(E["red"])
             else:
                 if self.player_data[self.victim]["rank"] > 0:
-                    return self.game_result(E("red"))
+                    return self.game_result(E["red"])
                 else:
-                    return self.game_result(E("blue"))
+                    return self.game_result(E["blue"])
 
         self.m = SingleChoice(
             self.bot, self.m, self.attack_result_cb,
