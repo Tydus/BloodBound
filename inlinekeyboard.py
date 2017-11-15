@@ -620,6 +620,8 @@ class bb:
         from pprint import pprint
         pprint(self.player_data)
 
+    def cancel(self):
+        self.display_game_message("Game cancelled.")
 
 def help(bot, update):
     update.message.reply_text("Use /start to test this bot.")
