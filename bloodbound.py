@@ -44,6 +44,16 @@ token_list = [
     ["c", "w", "s"],
     ["c", "w", "s"]
 ]
+    
+# Get faction name (Red/Blue/White) from rank
+def faction_name(rank):
+    if rank == 0: return 'white'
+    if rank >  0: return 'red'
+    if rank <  0: return 'blue'
+
+# Get opposite faction
+def opposite_faction(faction):
+    return {'red': 'blue', 'blue': 'red', 'white': '???'}[faction]
 
 class BloodBoundGame:
     def __init__(self, bot, update, chat_id):
@@ -114,6 +124,10 @@ class BloodBoundGame:
         for p, r in zip(self.players, ranks):
             self.player_data[p] = {"rank": r, "token": [], "token_available": token_list[abs(r)][:], "item": []}
         print(self.player_data)
+
+        # Set target to blue 1 and red 1 respectively
+        self.target = {'red': -1, 'blue': 1}
+
         self.sbm.add(E['info'], self.info_button)
         self.knife = self.players[random.randint(0, len(self.players) - 1)]
         self.round_start()
@@ -236,16 +250,7 @@ class BloodBoundGame:
 
     def attack_result(self):
         if len(self.player_data[self.victim]["token_available"]) == 0:
-            if abs(self.player_data[self.victim]["rank"]) == 1:
-                if self.player_data[self.victim]["rank"] > 0:
-                    return self.game_result(E["blue"])
-                else:
-                    return self.game_result(E["red"])
-            else:
-                if self.player_data[self.victim]["rank"] > 0:
-                    return self.game_result(E["red"])
-                else:
-                    return self.game_result(E["blue"])
+            return self.game_end()
 
         self.m = SingleChoice(
             self.bot, self.m, self.attack_result_cb,
@@ -255,6 +260,28 @@ class BloodBoundGame:
             static_btn_mgr=self.sbm,
             text=self.generate_game_message("%s select token:" % self.victim),
         ).message
+
+    def game_end(self):
+        victim_rank = self.player_data[self.victim]["rank"]
+
+        vf = faction_name(victim_rank)
+        of = opposite_faction(vf)
+
+        if victim_rank != self.target[of]: # Wrong target
+            return self.game_result(E[vf])
+
+        return self.game_result(E[of])
+
+        #if abs(self.player_data[self.victim]["rank"]) == 1:
+        #    if self.player_data[self.victim]["rank"] > 0:
+        #        return self.game_result(E["blue"])
+        #    else:
+        #        return self.game_result(E["red"])
+        #else:
+        #    if self.player_data[self.victim]["rank"] > 0:
+        #        return self.game_result(E["red"])
+        #    else:
+        #        return self.game_result(E["blue"])
 
     def attack_result_cb(self, bot, update, id, username, candidate, choice):
         choices = ["x", "c", "c", "w", "s"]
