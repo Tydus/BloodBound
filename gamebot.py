@@ -266,7 +266,7 @@ class GameManager:
         cid = update.message.chat_id
         i = self.instances.get(cid)
         if i: i.cancel()
-        self.instances[cid] = self.game_class(bot, update, cid)
+        self.instances[cid] = self.game_class(bot, update, cid, self)
 
     def start(self, **kwargs):
         self.updater.start_polling(**kwargs)

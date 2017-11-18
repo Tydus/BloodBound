@@ -56,9 +56,10 @@ def opposite_faction(faction):
     return {'red': 'blue', 'blue': 'red', 'white': '???'}[faction]
 
 class BloodBoundGame:
-    def __init__(self, bot, update, chat_id):
+    def __init__(self, bot, update, chat_id, gm):
         self.chat_id = chat_id
         self.bot = bot
+        self.gm = gm
         self.creator = update.message.from_user.username
         self.log = ["Game starting"]
         self.m = update.message.reply_text(self.log[0], parse_mode=ParseMode.HTML,)
