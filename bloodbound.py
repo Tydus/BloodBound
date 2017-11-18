@@ -316,7 +316,7 @@ class BloodBoundGame:
         if choices[choice] == "c":
             if (choice == 2 and self.player_data[username]["rank"] > 0) or (choice == 1 and self.player_data[username]["rank"] < 0):
                 redo = True
-        if choices[choice] in ["c", "w"] and or self.interfere_progress:
+        if choices[choice] in ["c", "w"] and self.interfere_progress:
             redo = True
         if redo:
             self.m = SingleChoice(
