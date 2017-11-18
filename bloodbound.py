@@ -247,6 +247,7 @@ class BloodBoundGame:
         if choice - 1 < len(self.interfere_candidate):
             self.log.append("%s accepted %s's interference" % (self.victim, self.interfere_candidate[choice - 1]))
             self.victim = self.interfere_candidate[choice - 1]
+        self.interfere_progress = True
         self.attack_result()
 
     def attack_result(self):
@@ -293,6 +294,8 @@ class BloodBoundGame:
         if choices[choice] == "c":
             if (choice == 2 and self.player_data[username]["rank"] > 0) or (choice == 1 and self.player_data[username]["rank"] < 0):
                 redo = True
+        if choices[choice] in ["c", "w"] and or self.interfere_progress:
+            redo = True
         if redo:
             self.m = SingleChoice(
                 self.bot, self.m, self.attack_result_cb,
@@ -311,6 +314,7 @@ class BloodBoundGame:
             self.player_data[username]["token"].append(token[0])
             self.knife = self.victim
             self.debug()
+            self.interfere_progress = False
             self.round_start()
 
     def game_result(self, side):
