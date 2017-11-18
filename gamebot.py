@@ -276,5 +276,7 @@ class GameManager:
         """Log Errors caused by Updates."""
         logger.warning('Update "%s" caused error "%s"', update, error)
 
+    def schedule(self, func, when, context=None):
+        return self.updater.job_queue.run_once(func, when, context)
 
 __all__ = ['GameManager', 'SingleChoice', 'MultipleChoice', 'StaticButtonManager', 'ParseMode']
