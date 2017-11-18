@@ -44,6 +44,14 @@ token_list = [
     ["c", "w", "s"],
     ["c", "w", "s"]
 ]
+
+KNIFE = 1
+INTERFERE = 2
+INTERFERE_ACCEPT = 3
+TOKEN = 4
+
+END = 99
+
     
 # Get faction name (Red/Blue/White) from rank
 def faction_name(rank):
@@ -67,6 +75,7 @@ class BloodBoundGame:
         self.log = []
         self.sbm = StaticButtonManager()
         self.round = 0
+        self.state = 0
         self.entry()
 
     def entry(self):
@@ -135,6 +144,7 @@ class BloodBoundGame:
         
     def round_start(self):
         self.round += 1
+        self.state = self.round * 100 + KNIFE
         self.log = []
         candidate = [x for x in self.players if x != self.knife] + [E['give']]
         self.m = MultipleChoice(
@@ -182,6 +192,7 @@ class BloodBoundGame:
             ).message
 
     def interfere(self):
+        self.state = self.round * 100 + INTERFERE
         self.interfere_candidate = []
         self.blacklist = [self.knife, self.victim]
         for player, data in self.player_data.iteritems():
@@ -195,14 +206,21 @@ class BloodBoundGame:
         if len(self.interfere_candidate) == 0:
             return self.attack_result()
 
+        self.gm.schedule(interfere_timeout, 60, self.round)
         self.m = SingleChoice(
             self.bot, self.m, self.interfere_cb,
             [E["interfere"], E["noop"]],
             self.interfere_candidate, blacklist=self.blacklist,
             id=self.chat_id,
             static_btn_mgr=self.sbm,
-            text=self.generate_game_message("%s: Guard %s?" % (", ".join(self.interfere_candidate), self.victim)),
+            text=self.generate_game_message("%s: Guard %s? 60 secs to choose or don't guard." % (", ".join(self.interfere_candidate), self.victim)),
         ).message
+
+    def interfere_timeout(self, round):
+        if round * 100 + INTERFERE != self.state:
+            return
+        list(map(self.interfere_candidate.remove, set(self.players) - set(self.blacklist)))
+        self.interfere_decide()
 
 
     def interfere_cb(self, bot, update, id, username, candidate, choice):
@@ -221,19 +239,21 @@ class BloodBoundGame:
             self.interfere_decide()
             return
 
-        self.m = SingleChoice(
-            self.bot, self.m, self.interfere_cb,
-            [E["interfere"], E["noop"]],
-            self.interfere_candidate, blacklist=self.blacklist,
-            id=self.chat_id,
-            static_btn_mgr=self.sbm,
-            text=self.generate_game_message("%s: Guard %s?" % (", ".join(set(self.players) - set(self.blacklist)), self.victim)),
-        ).message
+        # fuck telegram throttle
+        # self.m = SingleChoice(
+        #     self.bot, self.m, self.interfere_cb,
+        #     [E["interfere"], E["noop"]],
+        #     self.interfere_candidate, blacklist=self.blacklist,
+        #     id=self.chat_id,
+        #     static_btn_mgr=self.sbm,
+        #     text=self.generate_game_message("%s: Guard %s?" % (", ".join(set(self.players) - set(self.blacklist)), self.victim)),
+        # ).message
 
     def interfere_decide(self):
         if len(self.interfere_candidate) == 0:
             return self.attack_result()
         else:
+            self.state = self.round * 100 + INTERFERE_ACCEPT
             self.m = SingleChoice(
                 self.bot, self.m, self.interfere_accept_cb,
                 self.interfere_candidate + [E["noop"]],
@@ -251,6 +271,7 @@ class BloodBoundGame:
         self.attack_result()
 
     def attack_result(self):
+        self.state = self.round * 100 + TOKEN
         if len(self.player_data[self.victim]["token_available"]) == 0:
             return self.game_end()
 
@@ -264,6 +285,7 @@ class BloodBoundGame:
         ).message
 
     def game_end(self):
+        self.state = self.round * 100 + END
         victim_rank = self.player_data[self.victim]["rank"]
 
         vf = faction_name(victim_rank)
