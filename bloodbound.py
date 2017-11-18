@@ -220,6 +220,7 @@ class BloodBoundGame:
         if round * 100 + INTERFERE != self.state:
             return
         list(map(self.interfere_candidate.remove, set(self.players) - set(self.blacklist)))
+        self.log.append("Others chose no-op")
         self.interfere_decide()
 
 
