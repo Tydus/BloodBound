@@ -271,6 +271,47 @@ class BloodBoundGame:
         self.interfere_progress = True
         self.attack_result()
 
+    def skill1(self):
+        victim_rank = self.player_data[self.victim]["rank"]
+        vf = faction_name(victim_rank)
+        sgn = 1 if victim_rank > 0 else -1
+
+        cur = 0
+        for player, data in self.player_data.iteritems():
+            if sgn * data["rank"] > cur:
+                cur = data["rank"]
+                curp = player
+
+        self.target[vf] = curp
+        return 
+
+    def skill2(self):
+        return
+
+    def skill3(self):
+        return
+
+    def skill4(self):
+        return
+
+    def skill5(self):
+        return
+
+    def skill6(self):
+        return
+
+    def skill7(self):
+        return
+
+    def skill8(self):
+        return
+
+    def skill9(self):
+        return
+
+    def skill10(self):
+        return
+
     def attack_result(self):
         self.state = self.round * 100 + TOKEN
         if len(self.player_data[self.victim]["token_available"]) == 0:
@@ -309,13 +350,16 @@ class BloodBoundGame:
         #        return self.game_result(E["blue"])
 
     def attack_result_cb(self, bot, update, id, username, candidate, choice):
+        assert username == self.victim
+
+        data = self.player_data[username]
+
         choices = ["x", "c", "c", "w", "s"]
         redo = False
-        # import pdb; pdb.set_trace()
-        if choices[choice] not in self.player_data[username]["token_available"]:
+        if choices[choice] not in data["token_available"]:
             redo = True
         if choices[choice] == "c":
-            if (choice == 2 and self.player_data[username]["rank"] > 0) or (choice == 1 and self.player_data[username]["rank"] < 0):
+            if (choice == 2 and data["rank"] > 0) or (choice == 1 and data["rank"] < 0):
                 redo = True
         if choices[choice] in ["c", "w"] and self.interfere_progress:
             redo = True
@@ -328,17 +372,21 @@ class BloodBoundGame:
                 static_btn_mgr=self.sbm,
                 text=self.generate_game_message("Invalid selection! %s select token:" % self.victim),
             ).message
-        else:
+            return
             
-            token = self.token_convert_single(self.player_data[self.victim]["rank"], choice)
-            self.log.append("%s selected %s token" % (self.victim, token[1]))
-            self.display_game_message()
-            self.player_data[username]["token_available"].remove(choices[choice])
-            self.player_data[username]["token"].append(token[0])
-            self.knife = self.victim
-            self.debug()
-            self.interfere_progress = False
-            self.round_start()
+        token = self.token_convert_single(data["rank"], choice)
+        self.log.append("%s selected %s token" % (self.victim, token[1]))
+        self.display_game_message()
+        data["token_available"].remove(choices[choice])
+        data["token"].append(token[0])
+
+        if choices[choice] == "s": # Trigger skill
+            getattr(self, "skill" + data["rank"])()
+
+        self.knife = self.victim
+        self.debug()
+        self.interfere_progress = False
+        self.round_start()
 
     def game_result(self, side):
         self.display_game_message("%s wins!" % side)
