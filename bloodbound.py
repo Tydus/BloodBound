@@ -55,13 +55,12 @@ END = 99
     
 # Get faction name (Red/Blue/White) from rank
 def faction_name(rank):
-    if rank == 0: return 'white'
     if rank >  0: return 'red'
     if rank <  0: return 'blue'
 
 # Get opposite faction
 def opposite_faction(faction):
-    return {'red': 'blue', 'blue': 'red', 'white': '???'}[faction]
+    return {'red': 'blue', 'blue': 'red'}[faction]
 
 class BloodBoundGame:
     def __init__(self, bot, update, chat_id, gm):
