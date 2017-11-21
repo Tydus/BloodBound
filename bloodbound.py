@@ -307,7 +307,7 @@ class BloodBoundGame:
         if len(choices) != 2: 
             self.skill3()
         checked = [candidate[i] for i in choices[i]]
-        self.checked += checked
+        data["checked"] += checked
 
         self.log.append("%s checked %s and %s's player card" % (
             self.victim, checked[0], checked[1],
@@ -476,7 +476,15 @@ class BloodBoundGame:
         after_faction = E[['red', 'blue'][(rank > 0) ^ (abs(rank) == 3)]]
         ret.append(u"Next player (%s) is %s" % (player_after, after_faction))
 
-        # TODO: rank 3 can check player cards
+        if data.has_key('checked'):
+            ret.append(u"Checked players:")
+            for player in data['checked']:
+                r = self.player_data[player]["rank"]
+                ret.append("%s%s%s" % (
+                    (player + "             ")[:8],
+                    faction_name(r),
+                    E[str(abs(r))],
+                ))
 
         return {
             'text': u"\n".join(ret),
