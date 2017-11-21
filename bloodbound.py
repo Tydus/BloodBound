@@ -24,7 +24,7 @@ E={
    "7": u"7️⃣",
    "8": u"8️⃣",
    "9": u"9️⃣",
-   "0": u"*️⃣",
+   "10": u"*️⃣",
    "give": u"↪️",
    "skill": u"💢",
    "interfere": u"⚠️",
@@ -272,9 +272,13 @@ class BloodBoundGame:
         self.attack_result()
 
     def skill1(self):
-        victim_rank = self.player_data[self.victim]["rank"]
-        vf = faction_name(victim_rank)
-        sgn = 1 if victim_rank > 0 else -1
+        data = self.player_data[self.victim]
+        rank = data["rank"]
+
+        data['item'].append('feather')
+
+        vf = faction_name(rank)
+        sgn = 1 if rank > 0 else -1
 
         cur = 0
         for player, data in self.player_data.iteritems():
@@ -283,34 +287,56 @@ class BloodBoundGame:
                 curp = player
 
         self.target[vf] = curp
-        return 
+
+        self.round_end()
 
     def skill2(self):
-        return
+        self.round_end()
 
     def skill3(self):
-        return
+        candidate = [x for x in self.players if x != self.victim]
+        self.m = MultipleChoice(
+            self.bot, self.m, self.skill3_cb,
+            candidate,
+            self.victim,
+            id=self.chat_id,
+            static_btn_mgr=self.sbm,
+            text=self.generate_game_message("%s select two players:" % self.knife),
+        ).message
+
+    def skill3_cb(self, bot, update, id, username, candidate, choices):
+        if len(choices) != 2: 
+            self.skill3()
+        checked = [candidate[i] for i in choices[i]]
+        self.checked += checked
+
+        self.log.append("%s checked %s and %s's player card" % (
+            self.victim, checked[0], checked[1],
+        )
+        self.display_game_message()
+
+        self.round_end()
 
     def skill4(self):
-        return
+        self.round_end()
 
     def skill5(self):
-        return
+        self.round_end()
 
     def skill6(self):
-        return
+        self.round_end()
 
     def skill7(self):
-        return
+        self.round_end()
 
     def skill8(self):
-        return
+        self.round_end()
 
     def skill9(self):
-        return
+        self.round_end()
 
     def skill10(self):
-        return
+        self.round_end()
 
     def attack_result(self):
         self.state = self.round * 100 + TOKEN
@@ -382,7 +408,10 @@ class BloodBoundGame:
 
         if choices[choice] == "s": # Trigger skill
             getattr(self, "skill" + data["rank"])()
+        else:
+            self.round_end()
 
+    def round_end(self):
         self.knife = self.victim
         self.debug()
         self.interfere_progress = False
