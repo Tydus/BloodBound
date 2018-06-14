@@ -25,6 +25,7 @@ E={
    "8": u"8️⃣",
    "9": u"9️⃣",
    "10": u"*️⃣",
+   "attack": u"🗡",
    "give": u"↪️",
    "skill": u"💢",
    "interfere": u"⚠️",
@@ -64,6 +65,9 @@ def opposite_faction(faction):
 
 games = {}
 
+def display_name(user):
+    return user.user_name or user.full_name
+
 class BloodBoundGame:
 
     def coroutine(self, bot, update):
@@ -101,12 +105,12 @@ class BloodBoundGame:
                 continue
             self.players.append(player)
 
-            self.log.append((player.user_name or player.full_name) + " joined")
+            self.log.append(display_name(player) + " joined")
 
             if len(self.players) == 18: # Game will full after creator joins
                 player = self.creator
                 self.players.append(player)
-                self.log.append((player.user_name or player.full_name) + " joined")
+                self.log.append(display_name(player) + " joined")
 
             if player == c['creator']:
                 if len(self.players) <= 6:
@@ -133,7 +137,7 @@ class BloodBoundGame:
         self.prepare_game()
 
         while not self.game_end:
-            yield from self.round()
+            yield from self.play_a_round()
 
         self.state = self.round * 100 + END
         victim_rank = self.player_data[self.victim]["rank"]
@@ -184,62 +188,45 @@ class BloodBoundGame:
         self.sbm.add(E['info'], self.info_button) # TODO
         self.knife = self.players[random.randint(0, len(self.players) - 1)]
         
-    def round(self):
+    def play_a_round(self):
         self.round += 1
         self.state = self.round * 100 + KNIFE
         self.log = []
-        candidate = [x for x in self.players if x != self.knife] + [E['give']]
+
 
         self.m = self.m.reply_text(
             text=self.generate_game_message("%s action" % self.knife),
             parse_mode=ParseMode.HTML,
         )
 
-        self.m = yield from multiple_choice(
-            self.bot, self.m, self.attack_cb,
-            candidate,
-            [self.knife],
-            id=self.chat_id,
-            static_btn_mgr=self.sbm,
-            text=self.generate_game_message("%s action" % self.knife),
-            newmessage=True,
-        ).message
+        selection = yield from single_choice(
+            original_message=self.m,
+            candidate=[E['attack'], E['give']],
+            whitelist=[self.knife],
+            static_buttons=static_buttons,
+        )
+        is_give = (selection == 1)
 
-    def attack_cb(self, bot, update, id, username, candidate, choices):
-        message = update.callback_query.message
+        candidate = [display_name(x) for x in self.players if x != self.knife]
+        victim = yield from single_choice(
+            original_message=self.m,
+            candidate=candidate,
+            whitelist=[self.knife],
+            static_buttons=static_buttons,
+        )
+        victim = candidate[victim]
 
-        try:
-            if len(choices) == 0 or len(choices) > 2: 1 / 0
-
-            victim = choices[0] - 1
-            if victim >= len(candidate) - 1: 1 / 0 # Don't count "Give"
-            victim = candidate[victim]
-
-            if len(choices) == 1: # Attack!
-                self.victim = victim
-                self.log.append("%s is attacking %s" % (self.knife, self.victim))
-                return self.interfere()
-
-            # possibly give knife
-            if choices[1] - 1 != len(candidate) - 1: 1 / 0
-
+        if is_give:
             old_knife, self.knife = self.knife, victim
             self.log.append("%s gave the knife to %s." % (old_knife, self.knife))
             self.display_game_message()
+            return
 
-            return self.round_start()
+        self.victim = victim
+        self.log.append("%s is attacking %s" % (self.knife, self.victim))
 
-        except ZeroDivisionError:
-            self.m = MultipleChoice(
-                self.bot, self.m, self.attack_cb,
-                candidate,
-                self.knife,
-                id=self.chat_id,
-                static_btn_mgr=self.sbm,
-                text=self.generate_game_message("%s action invalid, retry:" % self.knife)
-            ).message
+        raise NotImplementedError
 
-    def interfere(self):
         self.state = self.round * 100 + INTERFERE
         self.interfere_candidate = []
         self.blacklist = [self.knife, self.victim]

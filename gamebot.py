@@ -57,7 +57,6 @@ class StaticButtonManager:
         )
 
 def single_choice(
-    bot,
     original_message,
     candidate,
     whitelist,
@@ -121,7 +120,6 @@ def _submit_button(id):
     return InlineKeyboardButton(u'⭕️', callback_data="%s#0" % id)
 
 def multiple_choice(
-     bot,
      original_message,
      candidate,
      to,
