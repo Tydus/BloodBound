@@ -1,5 +1,6 @@
 
 import inspect
+import threading
 
 from telegram.ext import Handler
 
@@ -94,22 +95,29 @@ class InteractiveHandler(Handler):
         if not context['coroutine']:
             # No conversation yet, hit one of the entrypoints
             context['coroutine'] = self.callback(dispatcher.bot, update)
+            context['lock'] = threading.Lock()
 
             try:
+                context['lock'].acquire()
                 yielded = next(context['coroutine'])
             except StopIteration:
                 del self.conversations[self._get_key(update)]
                 return 
+            finally:
+                context['lock'].release()
 
             context['next'] = yielded
 
         elif context['current_handler']:
             # Has conversation, check next then fallback
             try:
+                context['lock'].acquire()
                 yielded = context['coroutine'].send(update)
             except StopIteration:
                 del self.conversations[self._get_key(update)]
                 return
+            finally:
+                context['lock'].release()
 
             context['next'] = yielded
 
@@ -117,5 +125,7 @@ class InteractiveHandler(Handler):
             for i in self.fallbacks:
                 if i.check_update(update):
                     # TODO: send self to the callback
+                    context['lock'].acquire()
                     return i.handle_update(update, dispatcher)
+                    context['lock'].release()
 
