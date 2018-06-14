@@ -62,44 +62,89 @@ def faction_name(rank):
 def opposite_faction(faction):
     return {'red': 'blue', 'blue': 'red'}[faction]
 
+games = {}
+
 class BloodBoundGame:
-    def __init__(self, bot, update, chat_id, gm):
-        self.chat_id = chat_id
-        self.bot = bot
-        self.gm = gm
-        self.creator = update.message.from_user.username
-        self.log = ["Game starting"]
-        self.m = update.message.reply_text(self.log[0], parse_mode=ParseMode.HTML,)
+
+    def coroutine(self, bot, update):
+        chat_id = update.effective_chat.id
+
+        if games.has_key(chat):
+            update.message.reply_text("Another game is in progress.")
+            return
+
+        games[chat_id] = self
+
+        self.creator = update.effective_user
+        self.log = ["Looking for players"]
+
+        _id = uuid.uuid4()
+
+        reply_markup=_make_choice_keyboard(_id, ["Enter / Start"])
+
+        self.message = base_message = update.message.reply_text(
+            self.log[0],
+            parse_mode=ParseMode.HTML,
+            reply_markup=reply_markup,
+        )
+
         self.players = []
         self.log = []
-        self.sbm = StaticButtonManager()
+
+        while True:
+            update = yield [CallbackQueryHandler(
+                None, pattern=r"^" + _id + r"#.-?[0-9]+$",
+            )]
+            player = update.effective_user
+            if player in self.players:
+                update.callback_query.answer("You are already in this game.")
+                continue
+            self.players.append(player)
+
+            self.log.append((player.user_name or player.full_name) + " joined")
+
+            if len(self.players) == 18: # Game will full after creator joins
+                player = self.creator
+                self.players.append(player)
+                self.log.append((player.user_name or player.full_name) + " joined")
+
+            if player == c['creator']:
+                if len(self.players) <= 6:
+                    update.callback_query.answer("Not enough players.")
+                    continue
+
+                c['log'].append("Game commencing.")
+                base_message.edit_text(
+                    text="\n".join(c['log']),
+                    reply_markup=None,
+                )
+            else:
+                base_message.edit_text(
+                    reply_markup=reply_markup,
+                    text="\n".join(c['log']),
+                    reply_markup=reply_markup,
+                )
+
+            update.callback_query.answer()
+
         self.round = 0
         self.state = 0
-        self.entry()
 
-    def entry(self):
-        self.m = SingleChoice(self.bot, self.m, self.entry_cb, ["Enter / Start"], None, blacklist=[], id=self.chat_id, static_btn_mgr=self.sbm).message
+        self.prepare_game()
 
-    def entry_cb(self, bot, update, id, username, candidate, choice):
-        self.players.append(username)
-        if username == self.creator: # Game Owner
-            self.m.edit_text(
-                text="Game started",
-                parse_mode=ParseMode.HTML,
-            )
-            self.prepare_game()
-            return 
+        while not self.game_end:
+            yield from self.round()
 
-        self.log.append("%s entered the game" % username)
+        self.state = self.round * 100 + END
+        victim_rank = self.player_data[self.victim]["rank"]
 
-        self.m = SingleChoice(
-            self.bot, self.m, self.entry_cb,
-            ['Enter / Start'],
-            None, blacklist=self.players,
-            id=self.chat_id,
-            static_btn_mgr=self.sbm,
-            text="\n".join(self.log)
-        ).message
+        vf = faction_name(victim_rank)
+        of = opposite_faction(vf)
+
+        if victim_rank != self.target[of]: # Wrong target
+            return self.game_result(E[vf])
+
+        return self.game_result(E[of])
 
     def shuffle_rank(self):
         count = len(self.players)
@@ -128,7 +173,6 @@ class BloodBoundGame:
 
     def prepare_game(self):
         self.player_data = dict()
-        # random.shuffle(self.players)
         ranks = self.shuffle_rank()
         for p, r in zip(self.players, ranks):
             self.player_data[p] = {"rank": r, "token": [], "token_available": token_list[abs(r)][:], "item": []}
@@ -137,19 +181,24 @@ class BloodBoundGame:
         # Set target to blue 1 and red 1 respectively
         self.target = {'red': -1, 'blue': 1}
 
-        self.sbm.add(E['info'], self.info_button)
+        self.sbm.add(E['info'], self.info_button) # TODO
         self.knife = self.players[random.randint(0, len(self.players) - 1)]
-        self.round_start()
         
-    def round_start(self):
+    def round(self):
         self.round += 1
         self.state = self.round * 100 + KNIFE
         self.log = []
         candidate = [x for x in self.players if x != self.knife] + [E['give']]
-        self.m = MultipleChoice(
+
+        self.m = self.m.reply_text(
+            text=self.generate_game_message("%s action" % self.knife),
+            parse_mode=ParseMode.HTML,
+        )
+
+        self.m = yield from multiple_choice(
             self.bot, self.m, self.attack_cb,
             candidate,
-            self.knife,
+            [self.knife],
             id=self.chat_id,
             static_btn_mgr=self.sbm,
             text=self.generate_game_message("%s action" % self.knife),
@@ -340,7 +389,8 @@ class BloodBoundGame:
     def attack_result(self):
         self.state = self.round * 100 + TOKEN
         if len(self.player_data[self.victim]["token_available"]) == 0:
-            return self.game_end()
+            self.game_end = True
+            return 
 
         self.m = SingleChoice(
             self.bot, self.m, self.attack_result_cb,
@@ -351,28 +401,6 @@ class BloodBoundGame:
             text=self.generate_game_message("%s select token:" % self.victim),
         ).message
 
-    def game_end(self):
-        self.state = self.round * 100 + END
-        victim_rank = self.player_data[self.victim]["rank"]
-
-        vf = faction_name(victim_rank)
-        of = opposite_faction(vf)
-
-        if victim_rank != self.target[of]: # Wrong target
-            return self.game_result(E[vf])
-
-        return self.game_result(E[of])
-
-        #if abs(self.player_data[self.victim]["rank"]) == 1:
-        #    if self.player_data[self.victim]["rank"] > 0:
-        #        return self.game_result(E["blue"])
-        #    else:
-        #        return self.game_result(E["red"])
-        #else:
-        #    if self.player_data[self.victim]["rank"] > 0:
-        #        return self.game_result(E["red"])
-        #    else:
-        #        return self.game_result(E["blue"])
 
     def attack_result_cb(self, bot, update, id, username, candidate, choice):
         assert username == self.victim

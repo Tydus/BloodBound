@@ -7,6 +7,8 @@ from operator import neg
 import random
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
+from interactivehandler import InteractiveHandler
+import telegram.ext
 # from telegram.error import BadRequest
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -54,191 +56,141 @@ class StaticButtonManager:
             **self._db[choice]['callback'](bot, update)
         )
 
-class CallbackQueryRouter:
-    def __init__(self):
-        self._db = {}
-        self._static_db = {}
+def single_choice(
+    bot,
+    original_message,
+    candidate,
+    whitelist,
+    blacklist=[],
+    id=None,
+    text=None,
+    static_buttons=[],
+):
+    id = str(id or uuid.uuid4())
 
-    def register_handler(self, message_id, handler):
-        self._db[message_id] = handler
+    if whitelist and type(whitelist[0]) != int:
+        whitelist = map(lambda x: x.id, whitelist)
+    if blacklist and type(blacklist[0]) != int:
+        blacklist = map(lambda x: x.id, blacklist)
 
-    def deregister_handler(self, message_id):
-        del self._db[message_id]
-
-    def register_static_handler(self, group_id, handler):
-        self._static_db[group_id] = handler
-
-    def deregister_static_handler(self, group_id):
-        del self._static_db[group_id]
-
-    def __call__(self, bot, update):
+    def check_user(update):
         query = update.callback_query
-        message = query.message
-        print "Answer for message %s from %s: %s" % (
-            query.message.message_id,
-            query.from_user.username,
-            query.data,
-        )
+        uid = query.from_user.user_id
 
-        try:
-            id, choice = query.data.split('#')
-            choice = int(choice)
-        except Exception as e:
-            print e
-            return query.answer()
+        if ((whitelist and uid not in whitelist) or
+           (blacklist and uid in blacklist)):
+            query.answer()
+            return False
 
-        if choice < 0: # Static buttons
-            handler = self._static_db.get(id)
+        return True
+
+    reply_markup = _make_choice_keyboard(
+        id, candidate, static_buttons=static_buttons,
+    )
+
+    try:
+        if text:
+            message = original_message.edit_text(
+                text=text,
+                parse_mode=ParseMode.HTML,
+                reply_markup=reply_markup,
+            )
         else:
-            handler = self._db.get(message.message_id)
+            message = original_message.edit_reply_markup(
+                reply_markup=reply_markup,
+            )
+    except:
+        pass
 
-        if not handler:
-            return query.answer()
-        return handler(bot, update, id, choice)
+    while True:
+        update = yield [CallbackQueryHandler(
+            check_user, pattern=r"^" + id + r"#-?[0-9]+$",
+        )]
 
-router = CallbackQueryRouter()
+        query = update.callback_query
 
-class SingleChoice:
-    def __init__(self, bot, original_message, result_callback, candidate, to, blacklist=None, id=None, text=None, newmessage=False, static_btn_mgr=StaticButtonManager()):
-        self._callback = result_callback
-        self._candidate = candidate
-        self._selection = {}
-        self._id = str(id or uuid.uuid4())
-        self._blacklist = blacklist
-        self._sbm = static_btn_mgr
-        self.message = original_message
+        choice = int(query.data.split('#')[1])
 
-        if type(to) == list:
-            self._to = to
-        elif to == None:
-            self._to = None
+        if choice > len(candidate) or choice <= 0:
+            query.answer()
+            continue
+
+        return choice - 1 # choice count from 1
+
+def _submit_button(id):
+    return InlineKeyboardButton(u'⭕️', callback_data="%s#0" % id)
+
+def multiple_choice(
+     bot,
+     original_message,
+     candidate,
+     to,
+     id=None,
+     text=None,
+     static_buttons=[],
+ ):
+    id = str(id or uuid.uuid4())
+
+    if type(to) != int:
+        to = to.id
+
+    selections = set()
+
+    def check_user(update):
+        query = update.callback_query
+        uid = query.from_user.user_id
+
+        if uid != to:
+            query.answer()
+            return False
+
+        return True
+
+    reply_markup = _make_choice_keyboard(id,
+        candidate,
+        static_buttons=[_submit_button()] + static_buttons,
+    )
+
+    try:
+        if text:
+            message = original_message.edit_text(
+                text=text,
+                parse_mode=ParseMode.HTML,
+                reply_markup=reply_markup,
+            )
         else:
-            self._to = [to]
+            message = original_message.edit_reply_markup(
+                reply_markup=reply_markup,
+            )
+    except:
+        pass
 
-        reply_markup = _make_choice_keyboard(self._id,
+    while True:
+        update = yield [CallbackQueryHandler(
+            check_user, pattern=r"^" + id + r"#-?[0-9]+$",
+        )]
+
+        query = update.callback_query
+
+        choice = int(query.data.split('#')[1])
+
+        if choice > len(candidate) or choice < 0:
+            query.answer()
+            continue
+
+        if choice == 0: # Submit button
+            return map(lambda x: x - 1, selections) # choice count from 1
+        else:
+            # Toggle choice
+            if choice in selections:
+                selections.remove(choice)
+            else:
+                selections.add(choice)
+
+        reply_markup = _make_choice_keyboard(id,
             candidate,
-            selection=[],
-            static_buttons=self._sbm.buttons(),
-        )
-
-        try:
-            if newmessage:
-                self.message = self.message.reply_text(
-                    text=text or self.message.text,
-                    parse_mode=ParseMode.HTML,
-                    reply_markup=reply_markup,
-                )
-            elif text == None:
-                self.message = self.message.edit_reply_markup(
-                    reply_markup=reply_markup,
-                )
-            else: # text != None
-                self.message = self.message.edit_text(
-                    text=text or original_message.text,
-                    parse_mode=ParseMode.HTML,
-                    reply_markup=reply_markup,
-                )
-        except:
-            pass
-
-        router.register_handler(self.message.message_id, self.handle)
-
-    def handle(self, bot, update, id, choice):
-        query = update.callback_query
-        username = query.from_user.username
-
-        if self._to and username not in self._to:
-            return query.answer()
-
-        if self._blacklist and username in self._blacklist:
-            return query.answer()
-
-        if id != self._id:
-            return query.answer()
-
-        if choice > len(self._candidate):
-            return query.answer()
-
-        if choice == 0: # Submit, not used
-            return query.answer()
-
-        router.deregister_handler(query.message.message_id)
-        ret = self._callback(bot, update, id, username, self._candidate, choice) or {}
-        query.answer(**ret)
-        return 
-
-class MultipleChoice:
-    def __init__(self, bot, original_message, result_callback, candidate, to, id=None, text=None, newmessage=False, static_btn_mgr=StaticButtonManager()):
-        self._callback = result_callback
-        self._candidate = candidate
-        self._selection = {}
-        self._id = str(id or uuid.uuid4())
-        self._to = to
-        self._selections = set()
-        self._sbm = static_btn_mgr
-        self.message = original_message
-
-        reply_markup = _make_choice_keyboard(self._id,
-            self._candidate,
-            selection=[],
-            static_buttons=[self._submit_button()] + self._sbm.buttons(),
-        )
-
-        try:
-            if newmessage:
-                self.message = self.message.reply_text(
-                    text=text or self.message.text,
-                    parse_mode=ParseMode.HTML,
-                    reply_markup=reply_markup,
-                )
-            elif text == None:
-                self.message = self.message.edit_reply_markup(
-                    reply_markup=reply_markup,
-                )
-            else: # text != None
-                self.message = self.message.edit_text(
-                    text=text or original_message.text,
-                    parse_mode=ParseMode.HTML,
-                    reply_markup=reply_markup,
-                )
-        except:
-            pass
-
-        router.register_handler(self.message.message_id, self.handle)
-
-    def _submit_button(self):
-        return InlineKeyboardButton(u'⭕️', callback_data="%s#0" % self._id)
-
-    def handle(self, bot, update, id, choice):
-        query = update.callback_query
-        original_message = query.message
-        username = query.from_user.username
-
-        if self._to != username:
-            return query.answer()
-
-        if id != self._id:
-            return query.answer()
-
-        if choice > len(self._candidate):
-            return query.answer()
-
-        if choice == 0: # Submit
-            router.deregister_handler(original_message.message_id)
-            ret = self._callback(bot, update, self._id, self._to, self._candidate, sorted(list(self._selections))) or {}
-            query.answer(**ret)
-            return
-
-        # toggle choice
-        if choice in self._selections:
-            self._selections.remove(choice)
-        else:
-            self._selections.add(choice)
-        
-        reply_markup = _make_choice_keyboard(self._id,
-            self._candidate,
-            selection=self._selections,
-            static_buttons=[self._submit_button()] + self._sbm.buttons(),
+            selections=selections,
+            static_buttons=[_submit_button()] + static_buttons,
         )
 
         try:
@@ -247,6 +199,7 @@ class MultipleChoice:
             )
         except:
             pass
+
 
 class GameManager:
     def __init__(self, token, game_class, start_game_command="start_game", *args, **kwargs):
