@@ -5,7 +5,11 @@ import logging
 import uuid
 from operator import neg
 import random
-from gamebot import GameManager, SingleChoice, MultipleChoice, StaticButtonManager, ParseMode
+
+from telegram import ParseMode
+from telegram.ext import Updater
+
+from gamebot import single_choice
 
 E={
    "empty": u"⚫️",
@@ -50,17 +54,6 @@ token_list = [
 def faction_name(rank):
     if rank > 0: return 'red'
     if rank < 0: return 'blue'
-
-def token_convert(rank):
-    red = {"c": E["red"], "s": E[str(abs(rank))], "w": E["white"]}
-    blue = {"c": E["blue"], "s": E[str(abs(rank))], "w": E["white"]}
-    raw_token = token_list[abs(rank)]
-    if rank > 0:
-        return map(lambda x: red[x], raw_token)
-    elif rank < 0:
-        return map(lambda x: blue[x], raw_token)
-    else:
-        return [E["black"], E["black"], E["0"]]
 
 def token_convert_single(rank, choice):
     red = {1: ("r", E["red"]), 2: ("r", E["red"]), 4: ("s", E[str(abs(rank))]), 3: ("w", E["white"])}
@@ -181,7 +174,16 @@ class BloodBoundGame:
         self.player_data = dict()
         ranks = self.shuffle_rank()
         for p, r in zip(self.players, ranks):
-            self.player_data[p] = {"rank": r, "token": [], "token_available": token_list[abs(r)][:], "item": []}
+            # convert 'c' to the real color (r / b)
+            t = token_list[abs(r)]
+            t = list("".join(token_list).replace('c', faction_name(r)[0]))
+
+            self.player_data[p] = {
+                "rank": r,
+                "token_used": [],
+                "token_available": t,
+                "item": [],
+            }
         print(self.player_data)
 
         # Set target to blue 1 and red 1 respectively
@@ -193,12 +195,8 @@ class BloodBoundGame:
         self.knife = self.players[random.randint(0, len(self.players) - 1)]
 
         self.round = 0
-        
-    def play_a_round(self):
-        self.round += 1
-        self.log = []
 
-
+    def get_action(self):
         self.m = self.m.reply_text(
             text=self.generate_game_message("%s action" % self.knife),
             parse_mode=ParseMode.HTML,
@@ -221,6 +219,14 @@ class BloodBoundGame:
         )
         victim = candidate[victim]
 
+        return (victim, is_give)
+        
+    def play_a_round(self):
+        self.round += 1
+        self.log = []
+
+        victim, is_give = yield from self.get_action()
+
         if is_give:
             old_knife, self.knife = self.knife, victim
             self.log.append("%s gave the knife to %s." % (old_knife, self.knife))
@@ -232,15 +238,7 @@ class BloodBoundGame:
 
         # Interfere
 
-        interfere_candidate = []
-        for player, data in self.player_data.iteritems():
-            if player == self.knife or player == self.victim:
-                continue
-            if "s" in data["token_available"]:
-                interfere_candidate.append(player)
-
-        if len(interfere_candidate) > 0:
-            yield from self.interfere(interfere_candidate)
+        yield from self.interfere(interfere_candidate)
 
         # Attack
 
@@ -249,18 +247,27 @@ class BloodBoundGame:
             return 
 
         selected_token = yield from self.select_token()
-                    
-        token = token_convert_single(data["rank"], choice)
-        self.log.append("%s selected %s token" % (self.victim, token[1]))
-        self.display_game_message()
-        data["token_available"].remove(choices[choice])
-        data["token"].append(token[0])
 
-        if selected_token = "s":
+        icon = {
+            'r': 'red', 'b': 'blue',
+            'w': 'white', 's': str(abs(data['rank'])),
+        }[selected_token]
+
+        self.log.append("%s selected %s token" % (
+            display_name(self.victim),
+            E[icon],
+        ))
+        data["token_available"].remove(selected_token)
+        data["token_used"].append(selected_token)
+
+        if selected_token == "s":
             yield from getattr(self, "skill" + data["rank"])()
-        else:
-            self.knife = self.victim
-            self.debug()
+
+        self.knife = self.victim
+
+        self.display_game_message()
+
+        self.debug()
 
     def select_token(self):
         if self.interfered:
@@ -269,7 +276,7 @@ class BloodBoundGame:
         data = self.player_data[username]
 
         while True:
-            _, selection = yield from single_choice(
+            update, selection = yield from single_choice(
                 original_message=self.m,
                 candidate=[E["red"], E["blue"], E["white"], E["skill"]],
                 whitelist=[self.victim],
@@ -279,21 +286,31 @@ class BloodBoundGame:
                 ),
             )
 
-            # TODO validate token selection
-            
-            choices = ["x", "c", "c", "w", "s"]
-            redo = False
-            if choices[choice] not in data["token_available"]:
-                redo = True
-            if choices[choice] == "c":
-                if (choice == 2 and data["rank"] > 0) or (choice == 1 and data["rank"] < 0):
-                    redo = True
-            if choices[choice] in ["c", "w"] and self.interfere_progress:
-                redo = True
+            # validate token selection
+            selected_token = ["r", "b", "w", "s"][selection]
 
+            if selected_token in data['token_available']:
+                return select_token[0]
+
+            # TODO: white faction
+
+            update.callback_query.answer(
+                "Selection invalid, please retry.",
+                show_alert=True,
+            )
 
     def interfere(self, candidate):
         self.interfered = False
+
+        candidate = []
+        for player, data in self.player_data.iteritems():
+            if player == self.knife or player == self.victim:
+                continue
+            if "s" in data["token_available"]:
+                candidate.append(player)
+
+        if len(candidate) == 0:
+            return
 
         guardians = []
         blacklist = []
@@ -460,21 +477,23 @@ class BloodBoundGame:
         l.append("")
 
         for player, data in self.player_data.iteritems():
-            ret = "%s" % (player + "             ")[:8]
-            for t in data["token"]:
-                ret += E[{
-                    "r": "red", "b": "blue", "w": "white"
-                }.get(t, str(abs(data["rank"])))]
+            ret = "%-8s" % display_name(player)[:8]
+            for t in data["token_used"]:
+                icon = {
+                    'r': 'red', 'b': 'blue',
+                    'w': 'white', 's': str(abs(data['rank'])),
+                }[t]
+                ret += E[icon]
 
-            ret += E["empty"] * (3 - len(data["token"]))
+            ret += E["empty"] * (3 - len(data["token_used"]))
             ret += "".join([E[i] for i in data["item"]])
             l.append(u"<pre>%s</pre>" % ret)
 
         if notice:
+            l.append("")
             l.append(u"<b>%s</b>" % notice)
 
         return u"\n".join(l)
-
 
     def debug(self):
         from pprint import pprint
@@ -500,9 +519,13 @@ def start_game(bot, update):
         update.message.reply_text("Another game is in progress.")
         return
 
-    games[chat.id] = BloodBoundGame()
+    self = BloodBoundGame()
+    games[chat.id] = self
 
-    yield from games[chat.id].coroutine(bot, update)
+    try:
+        yield from self.coroutine(bot, update)
+    except ConversationCancelled as e:
+        self.cancel()
 
 def cancel_game(bot, update):
     chat = update.effective_chat
@@ -541,6 +564,18 @@ def info_button(bot, update):
         player_faction = E["white"]
     ret.append(u"Faction %s" % player_faction)
 
+def token_convert(rank):
+    red = {"c": E["red"], "s": E[str(abs(rank))], "w": E["white"]}
+    blue = {"c": E["blue"], "s": E[str(abs(rank))], "w": E["white"]}
+    raw_token = token_list[abs(rank)]
+    if rank > 0:
+        return map(lambda x: red[x], raw_token)
+    elif rank < 0:
+        return map(lambda x: blue[x], raw_token)
+    else:
+        return [E["black"], E["black"], E["0"]]
+
+
     ret.append(u"Available token %s" % "".join(token_convert(rank)))
 
     my_index = self.players.index(username)
@@ -570,8 +605,7 @@ def help(bot, update):
 def main():
     svr = Updater("483679321:AAG9x30HL-o4UEIt5dn7tDgYTjsucx2YhWw")
 
-    add = svr.dispatcher.add_handler
-    add(InteractiveHandler(
+    svr.dispatcher.add_handler(InteractiveHandler(
         start_game,
         entry_points = [
             CommandHandler('start_game', None),
@@ -585,7 +619,7 @@ def main():
         per_message=False,
     ))
 
-    add(CommandHandler('help', help))
+    svr.dispatcher.add_handler(CommandHandler('help', help))
 
     svr.start_polling(
         clean=True,

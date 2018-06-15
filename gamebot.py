@@ -3,7 +3,6 @@
 
 import logging
 import uuid
-from operator import neg
 import random
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
