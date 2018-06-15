@@ -6,9 +6,10 @@ import uuid
 from operator import neg
 import random
 
-from telegram import ParseMode
-from telegram.ext import Updater
+from telegram import InlineKeyboardButton, ParseMode
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
 
+from interactivehandler import InteractiveHandler, ConversationCancelled
 from gamebot import single_choice
 
 E={
@@ -19,6 +20,7 @@ E={
    "red": u"🔴",
    "blue": u"🔵",
    "white": u"⚪️",
+   "any": u"㊙️",
    "1": u"1️⃣",
    "2": u"2️⃣",
    "3": u"3️⃣",
@@ -55,17 +57,6 @@ def faction_name(rank):
     if rank > 0: return 'red'
     if rank < 0: return 'blue'
 
-def token_convert_single(rank, choice):
-    red = {1: ("r", E["red"]), 2: ("r", E["red"]), 4: ("s", E[str(abs(rank))]), 3: ("w", E["white"])}
-    blue = {1: ("b", E["blue"]), 2: ("b", E["blue"]), 4: ("s", E[str(abs(rank))]), 3: ("w", E["white"])}
-    white = {1: ("r", E["red"]), 2: ("b", E["blue"]), 4: ("s", E[str(abs(rank))]), 3: ("w", E["white"])}
-    if rank > 0:
-        return red[choice]
-    elif rank < 0:
-        return blue[choice]
-    else:
-        return white[choice]
-
 games = {}
 
 def display_name(user):
@@ -73,7 +64,7 @@ def display_name(user):
 
 class BloodBoundGame:
 
-    def coroutine(self, bot, update):
+    def main(self, bot, update):
         self.bot = bot
         self.creator = update.effective_user
 
@@ -357,7 +348,7 @@ class BloodBoundGame:
             text=self.generate_game_message("%s accept interfere?" % self.victim),
         )
 
-        if selection = len(guardians):
+        if selection == len(guardians): # The (n+1)-th button
             self.log.append("%s rejected interference" % self.victim)
         else:
             self.log.append("%s accepted %s's interference" % (
@@ -416,7 +407,7 @@ class BloodBoundGame:
 
         self.log.append("%s checked %s and %s's player card" % (
             self.victim, checked[0], checked[1],
-        )
+        ))
         self.display_game_message()
 
         self.round_end()
@@ -523,7 +514,7 @@ def start_game(bot, update):
     games[chat.id] = self
 
     try:
-        yield from self.coroutine(bot, update)
+        yield from self.main(bot, update)
     except ConversationCancelled as e:
         self.cancel()
 
@@ -543,40 +534,29 @@ def info_button(bot, update):
     self = games[update.effective_chat.id]
 
     query = update.callback_query
-    username = query.from_user.username
+    user = query.from_user
 
-    data = self.player_data.get(username)
+    data = self.player_data.get(user)
     if not data:
         return query.answer(
-            '%s: you are not in this game, please wait for the next game.' % username,
+            'You are not in this game, please wait for the next game.',
             show_alert=True,
         )
 
     ret = []
-    ret.append(u"Player %s" % username)
+    ret.append(u"Player %s" % display_name(user))
+    ret.append(u"Faction: %s" % E[faction_name(data['rank'])])
+    
+    token_icons = ""
+    for t in data["token_available"]:
+        icon = {
+            'r': 'red', 'b': 'blue',
+            'w': 'white', 'a': 'any',
+            's': str(abs(data['rank'])),
+        }[t]
+        token_icons += E[icon]
 
-    rank = data["rank"]
-    if rank > 0:
-        player_faction = E["red"]
-    elif rank < 0:
-        player_faction = E["blue"]
-    else:
-        player_faction = E["white"]
-    ret.append(u"Faction %s" % player_faction)
-
-def token_convert(rank):
-    red = {"c": E["red"], "s": E[str(abs(rank))], "w": E["white"]}
-    blue = {"c": E["blue"], "s": E[str(abs(rank))], "w": E["white"]}
-    raw_token = token_list[abs(rank)]
-    if rank > 0:
-        return map(lambda x: red[x], raw_token)
-    elif rank < 0:
-        return map(lambda x: blue[x], raw_token)
-    else:
-        return [E["black"], E["black"], E["0"]]
-
-
-    ret.append(u"Available token %s" % "".join(token_convert(rank)))
+    ret.append(u"Available token: %s" % token_icons)
 
     my_index = self.players.index(username)
     after_index = (my_index + 1) % len(self.players)
@@ -587,11 +567,11 @@ def token_convert(rank):
     if data.has_key('checked'):
         ret.append(u"Checked players:")
         for player in data['checked']:
-            r = self.player_data[player]["rank"]
-            ret.append("%s%s%s" % (
-                (player + "             ")[:8],
-                faction_name(r),
-                E[str(abs(r))],
+            rank = self.player_data[player]["rank"]
+            ret.append("%-8s%s%s" % (
+                display_name(player)[:8],
+                E[faction_name(rank)],
+                E[str(abs(rank))],
             ))
 
     return query.answer(
