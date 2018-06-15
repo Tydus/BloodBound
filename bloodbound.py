@@ -57,12 +57,11 @@ def faction_name(rank):
     if rank > 0: return 'red'
     if rank < 0: return 'blue'
 
-games = {}
-
 def display_name(user):
     return user.user_name or user.full_name
 
 class BloodBoundGame:
+    games = {}
 
     def main(self, bot, update):
         self.bot = bot
@@ -506,12 +505,12 @@ def start_game(bot, update):
         update.message.reply_text("The game must be started in a group.")
         return
 
-    if games.has_key(chat.id):
+    if BloodBoundGame.games.has_key(chat.id):
         update.message.reply_text("Another game is in progress.")
         return
 
     self = BloodBoundGame()
-    games[chat.id] = self
+    BloodBoundGame.games[chat.id] = self
 
     try:
         yield from self.main(bot, update)
@@ -522,7 +521,7 @@ def cancel_game(bot, update):
     chat = update.effective_chat
     user = update.effective_user
 
-    owner = games[chat.id].creator
+    owner = BloodBoundGame.games[chat.id].creator
     if user != owner:
         update.reply_text("You are not the owner of the game.")
         return
@@ -531,7 +530,7 @@ def cancel_game(bot, update):
 
 def info_button(bot, update):
     # Get `self` instance manually
-    self = games[update.effective_chat.id]
+    self = BloodBoundGame.games[update.effective_chat.id]
 
     query = update.callback_query
     user = query.from_user
