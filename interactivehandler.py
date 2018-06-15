@@ -1,6 +1,5 @@
 
 import inspect
-import threading
 import functools
 
 from telegram.ext import Handler

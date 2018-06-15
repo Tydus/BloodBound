@@ -46,22 +46,32 @@ token_list = [
     ["c", "w", "s"]
 ]
 
-KNIFE = 1
-INTERFERE = 2
-INTERFERE_ACCEPT = 3
-TOKEN = 4
-
-END = 99
-
-    
 # Get faction name (Red/Blue/White) from rank
 def faction_name(rank):
-    if rank >  0: return 'red'
-    if rank <  0: return 'blue'
+    if rank > 0: return 'red'
+    if rank < 0: return 'blue'
 
-# Get opposite faction
-def opposite_faction(faction):
-    return {'red': 'blue', 'blue': 'red'}[faction]
+def token_convert(rank):
+    red = {"c": E["red"], "s": E[str(abs(rank))], "w": E["white"]}
+    blue = {"c": E["blue"], "s": E[str(abs(rank))], "w": E["white"]}
+    raw_token = token_list[abs(rank)]
+    if rank > 0:
+        return map(lambda x: red[x], raw_token)
+    elif rank < 0:
+        return map(lambda x: blue[x], raw_token)
+    else:
+        return [E["black"], E["black"], E["0"]]
+
+def token_convert_single(rank, choice):
+    red = {1: ("r", E["red"]), 2: ("r", E["red"]), 4: ("s", E[str(abs(rank))]), 3: ("w", E["white"])}
+    blue = {1: ("b", E["blue"]), 2: ("b", E["blue"]), 4: ("s", E[str(abs(rank))]), 3: ("w", E["white"])}
+    white = {1: ("r", E["red"]), 2: ("b", E["blue"]), 4: ("s", E[str(abs(rank))]), 3: ("w", E["white"])}
+    if rank > 0:
+        return red[choice]
+    elif rank < 0:
+        return blue[choice]
+    else:
+        return white[choice]
 
 games = {}
 
@@ -71,33 +81,45 @@ def display_name(user):
 class BloodBoundGame:
 
     def coroutine(self, bot, update):
-        chat_id = update.effective_chat.id
-
-        if games.has_key(chat):
-            update.message.reply_text("Another game is in progress.")
-            return
-
-        games[chat_id] = self
-
+        self.bot = bot
         self.creator = update.effective_user
+
+        self.players = []
+        self.log = []
+
+        yield from self.wait_for_players(update)
+
+        self.prepare_game()
+
+        while not self.game_end:
+            yield from self.play_a_round()
+
+        victim_rank = self.player_data[self.victim]["rank"]
+
+        vf = faction_name( victim_rank)
+        of = faction_name(-victim_rank)
+
+        if victim_rank != self.target[of]: # Wrong target
+            self.display_game_message("%s wins!" % E[vf])
+        else:
+            self.display_game_message("%s wins!" % E[of])
+
+
+    def wait_for_players(self, update):
         self.log = ["Looking for players"]
 
-        _id = uuid.uuid4()
-
-        reply_markup=_make_choice_keyboard(_id, ["Enter / Start"])
-
-        self.message = base_message = update.message.reply_text(
+        self.m = update.message.reply_text(
             self.log[0],
             parse_mode=ParseMode.HTML,
             reply_markup=reply_markup,
         )
 
-        self.players = []
-        self.log = []
+        id = uuid.uuid4()
+        reply_markup=_make_choice_keyboard(id, ["Enter / Start"])
 
         while True:
             update = yield [CallbackQueryHandler(
-                None, pattern=r"^" + _id + r"#.-?[0-9]+$",
+                None, pattern=r"^" + id + r"#.-?[0-9]+$",
             )]
             player = update.effective_user
             if player in self.players:
@@ -118,37 +140,17 @@ class BloodBoundGame:
                     continue
 
                 c['log'].append("Game commencing.")
-                base_message.edit_text(
+                self.m.edit_text(
                     text="\n".join(c['log']),
                     reply_markup=None,
                 )
             else:
-                base_message.edit_text(
-                    reply_markup=reply_markup,
+                self.m.edit_text(
                     text="\n".join(c['log']),
                     reply_markup=reply_markup,
                 )
 
             update.callback_query.answer()
-
-        self.round = 0
-        self.state = 0
-
-        self.prepare_game()
-
-        while not self.game_end:
-            yield from self.play_a_round()
-
-        self.state = self.round * 100 + END
-        victim_rank = self.player_data[self.victim]["rank"]
-
-        vf = faction_name(victim_rank)
-        of = opposite_faction(vf)
-
-        if victim_rank != self.target[of]: # Wrong target
-            return self.game_result(E[vf])
-
-        return self.game_result(E[of])
 
     def shuffle_rank(self):
         count = len(self.players)
@@ -172,7 +174,7 @@ class BloodBoundGame:
                 blueteam += x[:count / 2 - 2]
         res = map(neg, blueteam) + redteam + whiteteam
         random.shuffle(res)
-        print(len(res), res)
+        assert len(res) == count
         return res
 
     def prepare_game(self):
@@ -185,12 +187,15 @@ class BloodBoundGame:
         # Set target to blue 1 and red 1 respectively
         self.target = {'red': -1, 'blue': 1}
 
-        self.sbm.add(E['info'], self.info_button) # TODO
+        self.static_buttons=[
+            InlineKeyboardButton(E['info'], callback_data='info'),
+        ]
         self.knife = self.players[random.randint(0, len(self.players) - 1)]
+
+        self.round = 0
         
     def play_a_round(self):
         self.round += 1
-        self.state = self.round * 100 + KNIFE
         self.log = []
 
 
@@ -199,20 +204,20 @@ class BloodBoundGame:
             parse_mode=ParseMode.HTML,
         )
 
-        selection = yield from single_choice(
+        _, selection = yield from single_choice(
             original_message=self.m,
             candidate=[E['attack'], E['give']],
             whitelist=[self.knife],
-            static_buttons=static_buttons,
+            static_buttons=self.static_buttons,
         )
         is_give = (selection == 1)
 
         candidate = [display_name(x) for x in self.players if x != self.knife]
-        victim = yield from single_choice(
+        _, victim = yield from single_choice(
             original_message=self.m,
             candidate=candidate,
             whitelist=[self.knife],
-            static_buttons=static_buttons,
+            static_buttons=self.static_buttons,
         )
         victim = candidate[victim]
 
@@ -225,86 +230,127 @@ class BloodBoundGame:
         self.victim = victim
         self.log.append("%s is attacking %s" % (self.knife, self.victim))
 
-        raise NotImplementedError
+        # Interfere
 
-        self.state = self.round * 100 + INTERFERE
-        self.interfere_candidate = []
-        self.blacklist = [self.knife, self.victim]
+        interfere_candidate = []
         for player, data in self.player_data.iteritems():
             if player == self.knife or player == self.victim:
                 continue
             if "s" in data["token_available"]:
-                self.interfere_candidate.append(player)
-            else:
-                self.blacklist.append(player)
+                interfere_candidate.append(player)
 
-        if len(self.interfere_candidate) == 0:
-            return self.attack_result()
+        if len(interfere_candidate) > 0:
+            yield from self.interfere(interfere_candidate)
 
-        self.gm.schedule(interfere_timeout, 60, self.round)
-        self.m = SingleChoice(
-            self.bot, self.m, self.interfere_cb,
-            [E["interfere"], E["noop"]],
-            self.interfere_candidate, blacklist=self.blacklist,
-            id=self.chat_id,
-            static_btn_mgr=self.sbm,
-            text=self.generate_game_message("%s: Guard %s? 60 secs to choose or don't guard." % (", ".join(self.interfere_candidate), self.victim)),
-        ).message
+        # Attack
 
-    def interfere_timeout(self, round):
-        if round * 100 + INTERFERE != self.state:
-            return
-        list(map(self.interfere_candidate.remove, set(self.players) - set(self.blacklist)))
-        self.log.append("Others chose no-op")
-        self.interfere_decide()
+        if len(self.player_data[self.victim]["token_available"]) == 0:
+            self.game_end = True
+            return 
 
-
-    def interfere_cb(self, bot, update, id, username, candidate, choice):
-        self.blacklist.append(username)
-        if choice == 2:
-            self.interfere_candidate.remove(username)
-
-        self.log.append("%s chooses %s" % (username, "interfere" if choice == 1 else "no-op"))
-
+        selected_token = yield from self.select_token()
+                    
+        token = token_convert_single(data["rank"], choice)
+        self.log.append("%s selected %s token" % (self.victim, token[1]))
         self.display_game_message()
+        data["token_available"].remove(choices[choice])
+        data["token"].append(token[0])
 
-        print(self.players)
-        print(self.blacklist)
-        print(set(self.players) - set(self.blacklist))
-        if set(self.players) - set(self.blacklist) == set():
-            self.interfere_decide()
-            return
-
-        # fuck telegram throttle
-        # self.m = SingleChoice(
-        #     self.bot, self.m, self.interfere_cb,
-        #     [E["interfere"], E["noop"]],
-        #     self.interfere_candidate, blacklist=self.blacklist,
-        #     id=self.chat_id,
-        #     static_btn_mgr=self.sbm,
-        #     text=self.generate_game_message("%s: Guard %s?" % (", ".join(set(self.players) - set(self.blacklist)), self.victim)),
-        # ).message
-
-    def interfere_decide(self):
-        if len(self.interfere_candidate) == 0:
-            return self.attack_result()
+        if selected_token = "s":
+            yield from getattr(self, "skill" + data["rank"])()
         else:
-            self.state = self.round * 100 + INTERFERE_ACCEPT
-            self.m = SingleChoice(
-                self.bot, self.m, self.interfere_accept_cb,
-                self.interfere_candidate + [E["noop"]],
-                self.victim,
-                id=self.chat_id,
-                static_btn_mgr=self.sbm,
-                text=self.generate_game_message("%s accept interfere?" % self.victim),
-            ).message
+            self.knife = self.victim
+            self.debug()
 
-    def interfere_accept_cb(self, bot, update, id, username, candidate, choice):
-        if choice - 1 < len(self.interfere_candidate):
-            self.log.append("%s accepted %s's interference" % (self.victim, self.interfere_candidate[choice - 1]))
-            self.victim = self.interfere_candidate[choice - 1]
-        self.interfere_progress = True
-        self.attack_result()
+    def select_token(self):
+        if self.interfered:
+            return "s"
+
+        data = self.player_data[username]
+
+        while True:
+            _, selection = yield from single_choice(
+                original_message=self.m,
+                candidate=[E["red"], E["blue"], E["white"], E["skill"]],
+                whitelist=[self.victim],
+                static_buttons=self.static_buttons,
+                text=self.generate_game_message(
+                    "%s select token:" % display_name(self.victim)
+                ),
+            )
+
+            # TODO validate token selection
+            
+            choices = ["x", "c", "c", "w", "s"]
+            redo = False
+            if choices[choice] not in data["token_available"]:
+                redo = True
+            if choices[choice] == "c":
+                if (choice == 2 and data["rank"] > 0) or (choice == 1 and data["rank"] < 0):
+                    redo = True
+            if choices[choice] in ["c", "w"] and self.interfere_progress:
+                redo = True
+
+
+    def interfere(self, candidate):
+        self.interfered = False
+
+        guardians = []
+        blacklist = []
+
+        # stick to a same ID so consequential choices (made by other players) can also be accepted
+        # repeated-choice will be blocked by blacklist
+        id = uuid.uuid4()
+
+        # TODO: set a timeout
+
+        while len(candidate) != len(blacklist):
+            update, selection = yield from single_choice(
+                original_message=self.m,
+                candidate=[E["interfere"], E["noop"]],
+                whitelist=candidate,
+                blacklist=blacklist,
+                id=id,
+                static_buttons=self.static_buttons,
+            )
+
+            blacklist.append(update.effective_user)
+
+            if selection == 0: # interfere
+                guardians.append(update.effective_user)
+
+            self.log.append("%s chooses %s" % (
+                display_name(update.effective_user),
+                ["interfere", "noop"][choice],
+            ))
+
+            self.display_game_message()
+
+        # victim decide
+        if len(ret) == 0:
+            return 
+
+        guardian_names = map(display_name, guardians)
+
+        _, selection = yield from single_choice(
+            original_message=self.m,
+            candidate=guardian_names + [E["noop"]],
+            whitelist=[self.victim],
+            static_buttons=self.static_buttons,
+            text=self.generate_game_message("%s accept interfere?" % self.victim),
+        )
+
+        if selection = len(guardians):
+            self.log.append("%s rejected interference" % self.victim)
+        else:
+            self.log.append("%s accepted %s's interference" % (
+                self.victim,
+                
+            ))
+            self.victim = self.guardians[choice]
+            self.interfered = True
+
+        return
 
     def skill1(self):
         data = self.player_data[self.victim]
@@ -323,10 +369,16 @@ class BloodBoundGame:
 
         self.target[vf] = curp
 
-        self.round_end()
+        return
+
+        # Dummy yield to make function generator
+        yield from range(0)
 
     def skill2(self):
-        self.round_end()
+        raise NotImplementedError
+
+        # Dummy yield to make function generator
+        yield from range(0)
 
     def skill3(self):
         candidate = [x for x in self.players if x != self.victim]
@@ -353,86 +405,46 @@ class BloodBoundGame:
         self.round_end()
 
     def skill4(self):
-        self.round_end()
+        raise NotImplementedError
+
+        # Dummy yield to make function generator
+        yield from range(0)
 
     def skill5(self):
-        self.round_end()
+        raise NotImplementedError
+
+        # Dummy yield to make function generator
+        yield from range(0)
 
     def skill6(self):
-        self.round_end()
+        raise NotImplementedError
+
+        # Dummy yield to make function generator
+        yield from range(0)
 
     def skill7(self):
-        self.round_end()
+        raise NotImplementedError
+
+        # Dummy yield to make function generator
+        yield from range(0)
 
     def skill8(self):
-        self.round_end()
+        raise NotImplementedError
+
+        # Dummy yield to make function generator
+        yield from range(0)
 
     def skill9(self):
-        self.round_end()
+        raise NotImplementedError
+
+        # Dummy yield to make function generator
+        yield from range(0)
 
     def skill10(self):
-        self.round_end()
+        raise NotImplementedError
 
-    def attack_result(self):
-        self.state = self.round * 100 + TOKEN
-        if len(self.player_data[self.victim]["token_available"]) == 0:
-            self.game_end = True
-            return 
-
-        self.m = SingleChoice(
-            self.bot, self.m, self.attack_result_cb,
-            [E["red"], E["blue"], E["white"], E["skill"]],
-            self.victim,
-            id=self.chat_id,
-            static_btn_mgr=self.sbm,
-            text=self.generate_game_message("%s select token:" % self.victim),
-        ).message
-
-
-    def attack_result_cb(self, bot, update, id, username, candidate, choice):
-        assert username == self.victim
-
-        data = self.player_data[username]
-
-        choices = ["x", "c", "c", "w", "s"]
-        redo = False
-        if choices[choice] not in data["token_available"]:
-            redo = True
-        if choices[choice] == "c":
-            if (choice == 2 and data["rank"] > 0) or (choice == 1 and data["rank"] < 0):
-                redo = True
-        if choices[choice] in ["c", "w"] and self.interfere_progress:
-            redo = True
-        if redo:
-            self.m = SingleChoice(
-                self.bot, self.m, self.attack_result_cb,
-                [E["red"], E["blue"], E["white"], E["skill"]],
-                self.victim,
-                id=self.chat_id,
-                static_btn_mgr=self.sbm,
-                text=self.generate_game_message("Invalid selection! %s select token:" % self.victim),
-            ).message
-            return
-            
-        token = self.token_convert_single(data["rank"], choice)
-        self.log.append("%s selected %s token" % (self.victim, token[1]))
-        self.display_game_message()
-        data["token_available"].remove(choices[choice])
-        data["token"].append(token[0])
-
-        if choices[choice] == "s": # Trigger skill
-            getattr(self, "skill" + data["rank"])()
-        else:
-            self.round_end()
-
-    def round_end(self):
-        self.knife = self.victim
-        self.debug()
-        self.interfere_progress = False
-        self.round_start()
-
-    def game_result(self, side):
-        self.display_game_message("%s wins!" % side)
+        # Dummy yield to make function generator
+        yield from range(0)
 
     def display_game_message(self, notice=""):
         self.m = self.m.edit_text(
@@ -463,70 +475,6 @@ class BloodBoundGame:
 
         return u"\n".join(l)
 
-    def info_button(self, bot, update):
-        query = update.callback_query
-        username = query.from_user.username
-
-        data = self.player_data.get(username)
-        if not data:
-            return {'text': '%s: you are not in this game, please wait for the next game.' % username, 'show_alert': True}
-
-        ret = []
-        ret.append(u"Player %s" % username)
-
-        rank = data["rank"]
-        if rank > 0:
-            player_faction = E["red"]
-        elif rank < 0:
-            player_faction = E["blue"]
-        else:
-            player_faction = E["white"]
-        ret.append(u"Faction %s" % player_faction)
-
-        ret.append(u"Available token %s" % "".join(self.token_convert(rank)))
-
-        my_index = self.players.index(username)
-        after_index = (my_index + 1) % len(self.players)
-        player_after = self.players[after_index]
-        after_faction = E[['red', 'blue'][(rank > 0) ^ (abs(rank) == 3)]]
-        ret.append(u"Next player (%s) is %s" % (player_after, after_faction))
-
-        if data.has_key('checked'):
-            ret.append(u"Checked players:")
-            for player in data['checked']:
-                r = self.player_data[player]["rank"]
-                ret.append("%s%s%s" % (
-                    (player + "             ")[:8],
-                    faction_name(r),
-                    E[str(abs(r))],
-                ))
-
-        return {
-            'text': u"\n".join(ret),
-            'show_alert': True,
-        }
-
-    def token_convert(self, rank):
-        red = {"c": E["red"], "s": E[str(abs(rank))], "w": E["white"]}
-        blue = {"c": E["blue"], "s": E[str(abs(rank))], "w": E["white"]}
-        raw_token = token_list[abs(rank)]
-        if rank > 0:
-            return map(lambda x: red[x], raw_token)
-        elif rank < 0:
-            return map(lambda x: blue[x], raw_token)
-        else:
-            return [E["black"], E["black"], E["0"]]
-
-    def token_convert_single(self, rank, choice):
-        red = {1: ("r", E["red"]), 2: ("r", E["red"]), 4: ("s", E[str(abs(rank))]), 3: ("w", E["white"])}
-        blue = {1: ("b", E["blue"]), 2: ("b", E["blue"]), 4: ("s", E[str(abs(rank))]), 3: ("w", E["white"])}
-        white = {1: ("r", E["red"]), 2: ("b", E["blue"]), 4: ("s", E[str(abs(rank))]), 3: ("w", E["white"])}
-        if rank > 0:
-            return red[choice]
-        elif rank < 0:
-            return blue[choice]
-        else:
-            return white[choice]
 
     def debug(self):
         from pprint import pprint
@@ -541,19 +489,109 @@ class BloodBoundGame:
                 parse_mode=ParseMode.HTML,
             )
 
+def start_game(bot, update):
+    chat = update.effective_chat
+
+    if chat.type not in ['group', 'supergroup']:
+        update.message.reply_text("The game must be started in a group.")
+        return
+
+    if games.has_key(chat.id):
+        update.message.reply_text("Another game is in progress.")
+        return
+
+    games[chat.id] = BloodBoundGame()
+
+    yield from games[chat.id].coroutine(bot, update)
+
+def cancel_game(bot, update):
+    chat = update.effective_chat
+    user = update.effective_user
+
+    owner = games[chat.id].creator
+    if user != owner:
+        update.reply_text("You are not the owner of the game.")
+        return
+
+    update.cancel_current_conversation()
+
+def info_button(bot, update):
+    # Get `self` instance manually
+    self = games[update.effective_chat.id]
+
+    query = update.callback_query
+    username = query.from_user.username
+
+    data = self.player_data.get(username)
+    if not data:
+        return query.answer(
+            '%s: you are not in this game, please wait for the next game.' % username,
+            show_alert=True,
+        )
+
+    ret = []
+    ret.append(u"Player %s" % username)
+
+    rank = data["rank"]
+    if rank > 0:
+        player_faction = E["red"]
+    elif rank < 0:
+        player_faction = E["blue"]
+    else:
+        player_faction = E["white"]
+    ret.append(u"Faction %s" % player_faction)
+
+    ret.append(u"Available token %s" % "".join(token_convert(rank)))
+
+    my_index = self.players.index(username)
+    after_index = (my_index + 1) % len(self.players)
+    player_after = self.players[after_index]
+    after_faction = E[['red', 'blue'][(rank > 0) ^ (abs(rank) == 3)]]
+    ret.append(u"Next player (%s) is %s" % (player_after, after_faction))
+
+    if data.has_key('checked'):
+        ret.append(u"Checked players:")
+        for player in data['checked']:
+            r = self.player_data[player]["rank"]
+            ret.append("%s%s%s" % (
+                (player + "             ")[:8],
+                faction_name(r),
+                E[str(abs(r))],
+            ))
+
+    return query.answer(
+        text=u"\n".join(ret),
+        show_alert=True,
+    )
+
 def help(bot, update):
     update.message.reply_text("Use /start_game to test this bot.")
 
 def main():
-    gm = GameManager("483679321:AAG9x30HL-o4UEIt5dn7tDgYTjsucx2YhWw", BloodBoundGame)
+    svr = Updater("483679321:AAG9x30HL-o4UEIt5dn7tDgYTjsucx2YhWw")
 
-    gm.add_command_handler('help', help)
+    add = svr.dispatcher.add_handler
+    add(InteractiveHandler(
+        start_game,
+        entry_points = [
+            CommandHandler('start_game', None),
+        ],
+        fallbacks = [
+            CommandHandler('cancel', cancel_game),
+            CallbackQueryHandler(info_button, pattern=r"^info$"),
+        ],
+        per_chat=True,
+        per_user=False,
+        per_message=False,
+    ))
 
-    gm.start(
+    add(CommandHandler('help', help))
+
+    svr.start_polling(
         clean=True,
         timeout=5,
-        read_latency=5,
     )
+    svr.idle()
 
 if __name__ == '__main__':
     main()
