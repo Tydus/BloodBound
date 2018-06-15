@@ -11,6 +11,7 @@ from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
 
 from interactivehandler import InteractiveHandler, ConversationCancelled
 from gamebot import single_choice
+import gamebot
 
 E={
    "empty": u"⚫️",
@@ -173,6 +174,7 @@ class BloodBoundGame:
                 "token_used": [],
                 "token_available": t,
                 "item": [],
+                "checked": [],
             }
         print(self.player_data)
 
@@ -361,7 +363,7 @@ class BloodBoundGame:
 
     def skill1(self):
         data = self.player_data[self.victim]
-        rank = data["rank"]
+        rank = data['rank']
 
         data['item'].append('feather')
 
@@ -388,28 +390,33 @@ class BloodBoundGame:
         yield from range(0)
 
     def skill3(self):
-        candidate = [x for x in self.players if x != self.victim]
-        self.m = MultipleChoice(
-            self.bot, self.m, self.skill3_cb,
-            candidate,
-            self.victim,
-            id=self.chat_id,
-            static_btn_mgr=self.sbm,
-            text=self.generate_game_message("%s select two players:" % self.knife),
-        ).message
+        player = self.victim
+        data = self.player_data[player]
 
-    def skill3_cb(self, bot, update, id, username, candidate, choices):
-        if len(choices) != 2: 
-            self.skill3()
-        checked = [candidate[i] for i in choices[i]]
-        data["checked"] += checked
+        for i in ['1st', '2nd']:
+            candidate = [x
+                for x in self.players
+                if x != player
+                and x not in data['checked']
+            ]
 
-        self.log.append("%s checked %s and %s's player card" % (
-            self.victim, checked[0], checked[1],
-        ))
-        self.display_game_message()
+            if not candidate:
+                self.log.append("No enough player to be checked.")
+                break
 
-        self.round_end()
+            selection = yield from gamebot.single_choice(
+                original_message=self.m,
+                candidate=map(display_name, candidate),
+                whitelist=[player],
+                text=self.generate_game_message(
+                    "%s select %s player to check:" % (display_name(player), i)
+                ),
+                static_buttons=self.static_buttons,
+            )
+
+            target = candidate[selection]
+            data['checked'].append(target)
+            self.log.append("%s checked %s" % display_name(player), display_name(target))
 
     def skill4(self):
         raise NotImplementedError
@@ -563,7 +570,7 @@ def info_button(bot, update):
     after_faction = E[['red', 'blue'][(rank > 0) ^ (abs(rank) == 3)]]
     ret.append(u"Next player (%s) is %s" % (player_after, after_faction))
 
-    if data.has_key('checked'):
+    if data['checked']:
         ret.append(u"Checked players:")
         for player in data['checked']:
             rank = self.player_data[player]["rank"]
