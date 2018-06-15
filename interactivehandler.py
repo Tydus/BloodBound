@@ -4,6 +4,10 @@ import threading
 
 from telegram.ext import Handler
 
+class ConversationCancelled(Exception):
+    def __init__(self, update):
+        self.caused_update = update
+
 class InteractiveHandler(Handler):
     def __init__(self,
         callback, # a generator function (i.e. has yield statement within it)
@@ -124,8 +128,21 @@ class InteractiveHandler(Handler):
         else:
             for i in self.fallbacks:
                 if i.check_update(update):
-                    # TODO: send self to the callback
                     context['lock'].acquire()
+                    # User can call update.cancel_current_conversation()
+                    # to shutdown current conversation cleanly (i.e. the coroutine)
+                    update.cancel_current_conversation = cancel_current_conversation
                     return i.handle_update(update, dispatcher)
                     context['lock'].release()
 
+        def cancel_current_conversation(self, update):
+            context = self.conversations[self._get_key(update)]
+
+            try:
+                context['lock'].acquire()
+                context['coroutine'].throw(ConversationCancelled)
+            except StopIteration:
+                pass
+            finally:
+                context['lock'].release()
+                del self.conversations[self._get_key(update)]
