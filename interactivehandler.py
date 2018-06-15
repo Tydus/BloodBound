@@ -1,12 +1,13 @@
 
 import inspect
 import threading
+import functools
 
 from telegram.ext import Handler
 
 class ConversationCancelled(Exception):
     def __init__(self, update):
-        self.caused_update = update
+        self.update = update
 
 class InteractiveHandler(Handler):
     def __init__(self,
@@ -79,6 +80,7 @@ class InteractiveHandler(Handler):
             return False
 
         # We have a conversation, check its next step
+        context['current_handler'] = None
         for i in context['next']:
             if i.check_update(update):
                 # Check optional predictor here
@@ -131,18 +133,19 @@ class InteractiveHandler(Handler):
                     context['lock'].acquire()
                     # User can call update.cancel_current_conversation()
                     # to shutdown current conversation cleanly (i.e. the coroutine)
-                    update.cancel_current_conversation = cancel_current_conversation
-                    return i.handle_update(update, dispatcher)
+                    update.cancel_current_conversation = (
+                            functools.partial(self.cancel_current_conversation, update)
+                    )
+                    i.handle_update(update, dispatcher)
                     context['lock'].release()
+                    return
 
-        def cancel_current_conversation(self, update):
-            context = self.conversations[self._get_key(update)]
+    def cancel_current_conversation(self, update):
+        context = self.conversations[self._get_key(update)]
 
-            try:
-                context['lock'].acquire()
-                context['coroutine'].throw(ConversationCancelled)
-            except StopIteration:
-                pass
-            finally:
-                context['lock'].release()
-                del self.conversations[self._get_key(update)]
+        try:
+            context['coroutine'].throw(ConversationCancelled(update))
+        except StopIteration:
+            pass
+
+        del self.conversations[self._get_key(update)]
