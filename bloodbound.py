@@ -36,9 +36,16 @@ E={
    "give": u"↪️",
    "skill": u"💢",
    "interfere": u"⚠️",
-   "noop": u"🔜 ",
    "fan": u"fan",
    "wand": u"wand",
+   "shield0": u"shiled0",
+   "shield1": u"shiled1",
+   "shield2": u"shiled2",
+   "shield3": u"shiled3",
+   "sword0": u"sword0",
+   "sword1": u"sword1",
+   "sword2": u"sword2",
+   "sword3": u"sword3",
    "reserved": u"🖌🗡🛡🔱🔰🔮💢♨️㊙️"
 }
 
@@ -192,9 +199,15 @@ class BloodBoundGame:
         # Set target to blue 1 and red 1 respectively
         self.target = {'red': -1, 'blue': 1}
 
+
         self.static_buttons=[
             InlineKeyboardButton(E['info'], callback_data='info'),
         ]
+
+        # For skill 6
+        self.shields = {}
+        self.current_shield_id = 0
+
         self.knife = self.players[random.randint(0, len(self.players) - 1)]
 
         self.round = 0
@@ -244,27 +257,29 @@ class BloodBoundGame:
             interfered = yield from self.interfere()
 
         # Attack
-        if len(self.player_data[self.victim]["token_available"]) == 0:
-            self.game_end = True
-            return 
 
-        selected_token = yield from self.select_and_apply_token(
-            forced='s' if interfered else None,
-        )
+        # Skill 6
+        if not interfered and self.skill6_isprotected(self.victim):
+            pass
 
-        icon = {
-            'r': 'red', 'b': 'blue',
-            'w': 'white', 's': str(abs(self.player_data[self.victim]['rank'])),
-        }[selected_token[0]]
+        else:
+            selected_token = yield from self.select_and_apply_token(
+                forced='s' if interfered else None,
+            )
 
-        self.log.append("%s selected %s token" % (
-            display_name(self.victim),
-            E[icon],
-        ))
+            icon = {
+                'r': 'red', 'b': 'blue',
+                'w': 'white', 's': str(abs(self.player_data[self.victim]['rank'])),
+            }[selected_token[0]]
 
-        # Skill
-        if selected_token == "s":
-            yield from getattr(self, "skill" + str(abs(self.player_data[self.victim]["rank"])))()
+            self.log.append("%s selected %s token" % (
+                display_name(self.victim),
+                E[icon],
+            ))
+
+            # Skill
+            if selected_token == "s":
+                yield from getattr(self, "skill" + str(abs(self.player_data[self.victim]["rank"])))()
 
         self.knife = self.victim
 
@@ -353,7 +368,7 @@ class BloodBoundGame:
         while len(candidate) != len(blacklist):
             update, selection = yield from single_choice(
                 original_message=self.m,
-                candidate=[E["interfere"], E["noop"]],
+                candidate=["interfere", "pass"],
                 whitelist=candidate,
                 blacklist=blacklist,
                 id=id,
@@ -367,7 +382,7 @@ class BloodBoundGame:
 
             self.log.append("%s chooses %s" % (
                 display_name(update.effective_user),
-                ["interfere", "noop"][selection],
+                ["interfere", "pass"][selection],
             ))
 
             self.display_game_message()
@@ -556,14 +571,54 @@ class BloodBoundGame:
         )
 
     def skill6(self):
-        raise NotImplementedError
+        player = self.victim
 
-        # Dummy yield to make function generator
-        yield from range(0)
+        candidate = [x for x in self.players if x != player]
+
+        _, selection = yield from gamebot.single_choice(
+            original_message=self.m,
+            candidate=map(display_name, candidate),
+            whitelist=[player],
+            text=self.generate_game_message(
+                "%s give a shield to a player:" % display_name(player),
+            ),
+            static_buttons=self.static_buttons,
+        )
+
+        target = candidate[selection]
+
+        self.player_data[player]['item'].append('sword%d'  % self.current_shield_id)
+        self.player_data[target]['item'].append('shield%d' % self.current_shield_id)
+
+        self.log.append("%s gave a shield to %s" % (
+            display_name(player), display_name(target),
+        ))
+
+        self.shields[self.current_shield_id] = {
+            'sword': player,
+            'shield': target,
+        }
+        self.current_shield_id += 1
+
+    def skill6_invalidate(self):
+        player = self.victim
+
+        for n, i in list(self.shields.items()): # a read-only copy
+            if i['sword'] == player:
+                self.player_data[i['sword'] ].remove('sword%d'  % str(n))
+                self.player_data[i['shield']].remove('shield%d' % str(n))
+                self.log.append("%s's swords are invalidated" % display_name(player))
+                del self.shields[i]
+
+    def skill6_isprotected(self, player):
+        for n, i in self.shields.items():
+            if i['shield'] == player:
+                self.log.append("%s is protected by the shield" % display_name(player))
+                return True
+        return False
 
     def skill7(self):
         player = self.victim
-
         target = self.knife
 
         self.log.append("%s casted skill on %s" % (
