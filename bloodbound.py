@@ -38,6 +38,7 @@ E={
    "interfere": u"⚠️",
    "noop": u"🔜 ",
    "fan": u"fan",
+   "wand": u"wand",
    "reserved": u"🖌🗡🛡🔱🔰🔮💢♨️㊙️"
 }
 
@@ -53,6 +54,16 @@ token_list = [
     ["c", "w", "s"],
     ["c", "w", "s"]
 ]
+
+# About Token colors:
+# x or xy
+# x: display token color
+# y: real token color (if not eq display color)
+# e.g.: 1 with a 'wand' can select a 'wr' token,
+# which means a red token displayed in white.
+#
+# y is decided while the token is spelt out,
+# and should be removed while drawing back.
 
 # Get faction name (Red/Blue/White) from rank
 def faction_name(rank):
@@ -244,7 +255,7 @@ class BloodBoundGame:
         icon = {
             'r': 'red', 'b': 'blue',
             'w': 'white', 's': str(abs(self.player_data[self.victim]['rank'])),
-        }[selected_token]
+        }[selected_token[0]]
 
         self.log.append("%s selected %s token" % (
             display_name(self.victim),
@@ -287,17 +298,32 @@ class BloodBoundGame:
                 # validate token selection
                 selected_token = ["r", "b", "w", "s"][selection]
 
+
                 if selected_token in data['token_available']:
                     break
 
-                # TODO: white faction
+                # white faction
+                if 'a' in data['token_available'] and selected_token != 's':
+                    selected_token += 'a'
+                    break
+
+                # wand
+                if 'wand' in data['items'] and selected_token == 'w':
+                    color = faction_name(data['rank'])[0]
+                    if color in data['token_available']:
+                        selected_token = 'w' + color
+                    break
 
                 update.callback_query.answer(
                     "Selection invalid, please retry.",
                     show_alert=True,
                 )
 
-        data['token_available'].remove(selected_token)
+        # convert skill token to display token
+        if selected_token == 's':
+            selected_token += str(abs(data['rank']))
+
+        data['token_available'].remove(selected_token[-1])
         data['token_used'].append(selected_token)
 
         return selected_token
@@ -484,7 +510,7 @@ class BloodBoundGame:
             icons = [E[{
                 'r': 'red', 'b': 'blue',
                 'w': 'white', 's': str(abs(data['rank'])),
-            }[i]] for i in candidate]
+            }[i[0]]] for i in candidate]
 
             _, selection = yield from single_choice(
                 original_message=self.m,
@@ -502,8 +528,8 @@ class BloodBoundGame:
                 display_name(self.saved_victim),
             ))
 
-            data['token_available'].remove(selected_token)
-            data['token_used'].append(selected_token)
+            data['token_available'].append(selected_token[-1])
+            data['token_used'].remove(selected_token)
 
     def skill5(self):
         player = self.victim
@@ -551,10 +577,34 @@ class BloodBoundGame:
         self.victim = player
 
     def skill8(self):
-        raise NotImplementedError
+        player = self.victim
+        pdata = self.player_data[player]
 
-        # Dummy yield to make function generator
-        yield from range(0)
+        if 'wand' not in pdata['item']:
+            pdata['item'].append('wand')
+
+        candidate = [x
+            for x in self.players
+            if x != player
+            and 'wand' not in self.player_data[x]['item']
+        ]
+
+        _, selection = yield from gamebot.single_choice(
+            original_message=self.m,
+            candidate=map(display_name, candidate),
+            whitelist=[player],
+            text=self.generate_game_message(
+                "%s give the wand to a player:" % display_name(player),
+            ),
+            static_buttons=self.static_buttons,
+        )
+
+        target = candidate[selection]
+        self.player_data[target]['item'].append('wand')
+        self.log.append("%s gave a wand to %s" % (
+            display_name(player), display_name(target),
+        ))
+
 
     def skill9(self):
         player = self.victim
@@ -570,7 +620,7 @@ class BloodBoundGame:
             candidate=map(display_name, candidate),
             whitelist=[player],
             text=self.generate_game_message(
-                "%s put the fan to a player:" % display_name(player),
+                "%s give the fan to a player:" % display_name(player),
             ),
             static_buttons=self.static_buttons,
         )
@@ -606,7 +656,7 @@ class BloodBoundGame:
                 icon = {
                     'r': 'red', 'b': 'blue',
                     'w': 'white', 's': str(abs(data['rank'])),
-                }[t]
+                }[t[0]]
                 ret += E[icon]
 
             ret += E["empty"] * (3 - len(data["token_used"]))
