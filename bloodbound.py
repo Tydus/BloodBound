@@ -37,6 +37,7 @@ E={
    "skill": u"💢",
    "interfere": u"⚠️",
    "noop": u"🔜 ",
+   "fan": u"fan",
    "reserved": u"🖌🗡🛡🔱🔰🔮💢♨️㊙️"
 }
 
@@ -465,7 +466,7 @@ class BloodBoundGame:
                 whitelist=[player],
                 text=generate_game_message(
                     "%s select kill or heal:" % display_name(player),
-                )
+                ),
                 static_buttons=self.static_buttons,
             )
 
@@ -473,7 +474,7 @@ class BloodBoundGame:
             self.log.append("%s killed %s" % (
                 display_name(player),
                 display_name(self.saved_victim),
-            )
+            ))
             yield from self.select_and_apply_token()
 
         else:
@@ -497,7 +498,7 @@ class BloodBoundGame:
             self.log.append("%s healed %s" % (
                 display_name(player),
                 display_name(self.saved_victim),
-            )
+            ))
 
             data['token_available'].remove(selected_token)
             data['token_used'].append(selected_token)
