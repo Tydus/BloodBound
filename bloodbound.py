@@ -390,7 +390,6 @@ class BloodBoundGame:
 
     def skill2(self):
         player = self.victim
-        pdata = self.player_data[player]
 
         candidate = [x for x in self.players if x != player]
 
@@ -425,13 +424,13 @@ class BloodBoundGame:
 
     def skill3(self):
         player = self.victim
-        data = self.player_data[player]
+        pdata = self.player_data[player]
 
         for i in ['1st', '2nd']:
             candidate = [x
                 for x in self.players
                 if x != player
-                and x not in data['checked']
+                and x not in pdata['checked']
             ]
 
             if not candidate:
@@ -449,7 +448,7 @@ class BloodBoundGame:
             )
 
             target = candidate[selection]
-            data['checked'].append(target)
+            pdata['checked'].append(target)
             self.log.append("%s checked %s" % display_name(player), display_name(target))
 
     def skill4(self):
@@ -457,7 +456,6 @@ class BloodBoundGame:
             return
 
         player = self.victim
-        pdata = self.player_data[player]
 
         data = self.player_data[self.saved_victim]
 
@@ -515,10 +513,37 @@ class BloodBoundGame:
             data['token_used'].append(selected_token)
 
     def skill5(self):
-        raise NotImplementedError
+        player = self.victim
 
-        # Dummy yield to make function generator
-        yield from range(0)
+        candidate = [x for x in self.players if x != player]
+
+        _, selection = yield from gamebot.single_choice(
+            original_message=self.m,
+            candidate=map(display_name, candidate),
+            whitelist=[player],
+            text=self.generate_game_message(
+                "%s a player to trigger skill:" % display_name(player),
+            ),
+            static_buttons=self.static_buttons,
+        )
+        self.victim = candidate[selection]
+        self.log("%s casted skill on %s" % (
+            display_name(player), display_name(self.victim),
+        ))
+
+        data = self.player_data[self.victim]
+        if not data['token_available']:
+            self.game_end = True
+            return
+
+        if 's' in data['token_available']:
+            selected_token = 's'
+        else:
+            selected_token = yield from self.select_token()
+        
+        data['token_available'].remove(selected_token)
+        data['token_used'].append(selected_token)
+
 
     def skill6(self):
         raise NotImplementedError
