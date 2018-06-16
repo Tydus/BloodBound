@@ -203,13 +203,13 @@ class BloodBoundGame:
         is_give = (selection == 1)
 
         candidate = [display_name(x) for x in self.players if x != self.knife]
-        _, victim = yield from single_choice(
+        _, selection = yield from single_choice(
             original_message=self.m,
             candidate=candidate,
             whitelist=[self.knife],
             static_buttons=self.static_buttons,
         )
-        victim = candidate[victim]
+        victim = candidate[selection]
 
         return (victim, is_give)
         
@@ -286,7 +286,7 @@ class BloodBoundGame:
             selected_token = ["r", "b", "w", "s"][selection]
 
             if selected_token in data['token_available']:
-                return select_token[0]
+                return selected_token
 
             # TODO: white faction
 
@@ -297,6 +297,7 @@ class BloodBoundGame:
 
     def interfere(self, candidate):
         self.interfered = False
+        self.saved_victim = None
 
         candidate = []
         for player, data in self.player_data.iteritems():
@@ -360,7 +361,7 @@ class BloodBoundGame:
                 self.victim,
                 
             ))
-            self.victim = self.guardians[choice]
+            self.saved_victim, self.victim = self.victim, guardians[choice]
             self.interfered = True
 
         return
@@ -393,7 +394,7 @@ class BloodBoundGame:
 
         candidate = [x for x in self.players if x != player]
 
-        selection = yield from gamebot.single_choice(
+        _, selection = yield from gamebot.single_choice(
             original_message=self.m,
             candidate=map(display_name, candidate),
             whitelist=[player],
@@ -419,7 +420,8 @@ class BloodBoundGame:
                 )
             )
 
-            data.remove(selected_token)
+            data['token_available'].remove(selected_token)
+            data['token_used'].append(selected_token)
 
     def skill3(self):
         player = self.victim
@@ -436,7 +438,7 @@ class BloodBoundGame:
                 self.log.append("No enough player to be checked.")
                 break
 
-            selection = yield from gamebot.single_choice(
+            _, selection = yield from gamebot.single_choice(
                 original_message=self.m,
                 candidate=map(display_name, candidate),
                 whitelist=[player],
@@ -451,10 +453,66 @@ class BloodBoundGame:
             self.log.append("%s checked %s" % display_name(player), display_name(target))
 
     def skill4(self):
-        raise NotImplementedError
+        if not self.saved_victim:
+            return
 
-        # Dummy yield to make function generator
-        yield from range(0)
+        player = self.victim
+        pdata = self.player_data[player]
+
+        data = self.player_data[self.saved_victim]
+
+        if not data['token_used']:
+            selection = 0 # kill
+        else:
+            _, selection = yield from single_choice(
+                original_message=self.m,
+                candidate=['Kill', 'Heal'],
+                whitelist=[player],
+                text=generate_game_message(
+                    "%s select kill or heal:" % display_name(player),
+                )
+                static_buttons=self.static_buttons,
+            )
+
+        if selection == 0:
+            self.log.append("%s killed %s" % (
+                display_name(player),
+                display_name(self.saved_victim),
+            )
+            if not data['token_available']:
+                self.game_end = True
+                return
+
+            selected_token = yield from self.select_token()
+
+            data['token_available'].remove(selected_token)
+            data['token_used'].append(selected_token)
+
+        else:
+            candidate = data['token_used']
+            icons = [E[{
+                'r': 'red', 'b': 'blue',
+                'w': 'white', 's': str(abs(data['rank'])),
+            }[i]] for i in candidate]
+
+            _, selection = yield from single_choice(
+                original_message=self.m,
+                candidate=icons,
+                whitelist=[self.saved_victim],
+                text=generate_game_message("%s select token for healing:" %
+                    display_name(self.saved_victim)
+                ),
+                static_buttons=self.static_buttons,
+            )
+
+            select_token = candidate[selection]
+            self.log.append("%s healed %s" % (
+                display_name(player),
+                display_name(self.saved_victim),
+            )
+
+            data['token_available'].remove(selected_token)
+            data['token_used'].append(selected_token)
 
     def skill5(self):
         raise NotImplementedError
