@@ -196,7 +196,7 @@ class BloodBoundGame:
 
         _, selection = yield from single_choice(
             original_message=self.m,
-            candidate=[E['attack'], E['give']],
+            candidate=['Attack', 'Give'],
             whitelist=[self.knife],
             static_buttons=self.static_buttons,
         )
@@ -252,6 +252,9 @@ class BloodBoundGame:
         data["token_available"].remove(selected_token)
         data["token_used"].append(selected_token)
 
+        # Reset interfered flag because it may affect skills
+        self.interfered = False
+
         if selected_token == "s":
             yield from getattr(self, "skill" + data["rank"])()
 
@@ -261,7 +264,7 @@ class BloodBoundGame:
 
         self.debug()
 
-    def select_token(self):
+    def select_token(self, instruction=None):
         if self.interfered:
             return "s"
 
@@ -274,6 +277,7 @@ class BloodBoundGame:
                 whitelist=[self.victim],
                 static_buttons=self.static_buttons,
                 text=self.generate_game_message(
+                    instruction or
                     "%s select token:" % display_name(self.victim)
                 ),
             )
@@ -384,10 +388,38 @@ class BloodBoundGame:
         yield from range(0)
 
     def skill2(self):
-        raise NotImplementedError
+        player = self.victim
+        pdata = self.player_data[player]
 
-        # Dummy yield to make function generator
-        yield from range(0)
+        candidate = [x for x in self.players if x != player]
+
+        selection = yield from gamebot.single_choice(
+            original_message=self.m,
+            candidate=map(display_name, candidate),
+            whitelist=[player],
+            text=self.generate_game_message(
+                "%s a player to trigger skill:" % display_name(player),
+            ),
+            static_buttons=self.static_buttons,
+        )
+        self.victim = candidate[selection]
+        self.log("%s casted skill on %s" % (
+            display_name(player), display_name(self.victim),
+        ))
+
+        data = self.player_data[self.victim]
+        for i in ['1st', '2nd']:
+            if not data['token_available']:
+                self.game_end = True
+                return
+
+            selected_token = yield from self.select_token(
+                instruction="%s select %s token:" % (
+                    display_name(self.victim), i
+                )
+            )
+
+            data.remove(selected_token)
 
     def skill3(self):
         player = self.victim
