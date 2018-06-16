@@ -230,7 +230,8 @@ class BloodBoundGame:
         self.log.append("%s is attacking %s" % (self.knife, self.victim))
 
         # Interfere (victim may be switched)
-        interfered = yield from self.interfere(interfere_candidate)
+        if fan not in self.player_data[self.victim]['item']:
+            interfered = yield from self.interfere(interfere_candidate)
 
         # Attack
         if len(self.player_data[self.victim]["token_available"]) == 0:
@@ -447,7 +448,9 @@ class BloodBoundGame:
 
             target = candidate[selection]
             pdata['checked'].append(target)
-            self.log.append("%s checked %s" % display_name(player), display_name(target))
+            self.log.append("%s checked %s" % (
+                display_name(player), display_name(target),
+            )
 
     def skill4(self):
         if not self.saved_victim:
@@ -555,10 +558,29 @@ class BloodBoundGame:
         yield from range(0)
 
     def skill9(self):
-        raise NotImplementedError
+        player = self.victim
 
-        # Dummy yield to make function generator
-        yield from range(0)
+        candidate = [x
+            for x in self.players
+            if x != player
+            and 'fan' not in self.player_data[x]['item']
+        ]
+
+        _, selection = yield from gamebot.single_choice(
+            original_message=self.m,
+            candidate=map(display_name, candidate),
+            whitelist=[player],
+            text=self.generate_game_message(
+                "%s put the fan to a player:" % display_name(player),
+            ),
+            static_buttons=self.static_buttons,
+        )
+
+        target = candidate[selection]
+        self.player_data[target]['item'].append('fan')
+        self.log.append("%s gave a fan to %s" % (
+            display_name(player), display_name(target),
+        )
 
     def skill10(self):
         raise NotImplementedError
