@@ -228,17 +228,18 @@ class BloodBoundGame:
         self.victim = victim
         self.log.append("%s is attacking %s" % (self.knife, self.victim))
 
-        # Interfere
-
-        yield from self.interfere(interfere_candidate)
+        # Interfere (victim may be switched)
+        interfered = yield from self.interfere(interfere_candidate)
 
         # Attack
-
         if len(self.player_data[self.victim]["token_available"]) == 0:
             self.game_end = True
             return 
 
-        selected_token = yield from self.select_token()
+        if interfered:
+            selected_token = 's'
+        else:
+            selected_token = yield from self.select_token()
 
         icon = {
             'r': 'red', 'b': 'blue',
@@ -252,9 +253,7 @@ class BloodBoundGame:
         data["token_available"].remove(selected_token)
         data["token_used"].append(selected_token)
 
-        # Reset interfered flag because it may affect skills
-        self.interfered = False
-
+        # Skill
         if selected_token == "s":
             yield from getattr(self, "skill" + data["rank"])()
 
@@ -265,9 +264,6 @@ class BloodBoundGame:
         self.debug()
 
     def select_token(self, instruction=None):
-        if self.interfered:
-            return "s"
-
         data = self.player_data[username]
 
         while True:
@@ -296,7 +292,6 @@ class BloodBoundGame:
             )
 
     def interfere(self, candidate):
-        self.interfered = False
         self.saved_victim = None
 
         candidate = []
@@ -362,9 +357,9 @@ class BloodBoundGame:
                 
             ))
             self.saved_victim, self.victim = self.victim, guardians[choice]
-            self.interfered = True
+            return True
 
-        return
+        return False
 
     def skill1(self):
         data = self.player_data[self.victim]
@@ -526,6 +521,7 @@ class BloodBoundGame:
             ),
             static_buttons=self.static_buttons,
         )
+
         self.victim = candidate[selection]
         self.log("%s casted skill on %s" % (
             display_name(player), display_name(self.victim),
@@ -552,10 +548,29 @@ class BloodBoundGame:
         yield from range(0)
 
     def skill7(self):
-        raise NotImplementedError
+        player = self.victim
 
-        # Dummy yield to make function generator
-        yield from range(0)
+        target = self.knife
+
+        self.log.append("%s casted skill on %s" % (
+            display_name(player),
+            display_name(target),
+        ))
+
+        # Temporarily switch victim for select_token()
+        self.victim = target
+
+        data = self.player_data[self.victim]
+        if not data['token_available']:
+            self.game_end = True
+            return
+
+        selected_token = yield from self.select_token()
+        
+        data['token_available'].remove(selected_token)
+        data['token_used'].append(selected_token)
+
+        self.victim = player
 
     def skill8(self):
         raise NotImplementedError
