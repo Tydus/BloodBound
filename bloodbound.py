@@ -10,7 +10,7 @@ from telegram import InlineKeyboardButton, ParseMode
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
 
 from interactivehandler import InteractiveHandler, ConversationCancelled
-from gamebot import single_choice
+from gamebot import single_choice, _make_choice_keyboard
 import gamebot
 
 E={
@@ -93,18 +93,17 @@ class BloodBoundGame:
     def wait_for_players(self, update):
         self.log = ["Looking for players"]
 
+        id = uuid.uuid4()
+        reply_markup=_make_choice_keyboard(id, ["Enter / Start"])
         self.m = update.message.reply_text(
             self.log[0],
             parse_mode=ParseMode.HTML,
             reply_markup=reply_markup,
         )
 
-        id = uuid.uuid4()
-        reply_markup=_make_choice_keyboard(id, ["Enter / Start"])
-
         while True:
             update = yield [CallbackQueryHandler(
-                None, pattern=r"^" + id + r"#.-?[0-9]+$",
+                None, pattern=r"^" + str(id) + r"#.-?[0-9]+$",
             )]
             player = update.effective_user
             if player in self.players:
@@ -119,19 +118,19 @@ class BloodBoundGame:
                 self.players.append(player)
                 self.log.append(display_name(player) + " joined")
 
-            if player == c['creator']:
+            if player == self.creator:
                 if len(self.players) <= 6:
                     update.callback_query.answer("Not enough players.")
                     continue
 
-                c['log'].append("Game commencing.")
+                self.log.append("Game commencing.")
                 self.m.edit_text(
-                    text="\n".join(c['log']),
+                    text="\n".join(self.log),
                     reply_markup=None,
                 )
             else:
                 self.m.edit_text(
-                    text="\n".join(c['log']),
+                    text="\n".join(self.log),
                     reply_markup=reply_markup,
                 )
 
@@ -143,7 +142,7 @@ class BloodBoundGame:
         redteam = [1]
         blueteam = [1]
         whiteteam = []
-        x = range(2, 10)
+        x = list(range(2, 10))
         random.shuffle(x)
         if count % 2 == 1:
             whiteteam.append(0)
@@ -157,7 +156,7 @@ class BloodBoundGame:
             else:
                 blueteam.append(3)
                 blueteam += x[:count / 2 - 2]
-        res = map(neg, blueteam) + redteam + whiteteam
+        res = list(map(neg, blueteam)) + redteam + whiteteam
         random.shuffle(res)
         assert len(res) == count
         return res
@@ -168,7 +167,7 @@ class BloodBoundGame:
         for p, r in zip(self.players, ranks):
             # convert 'c' to the real color (r / b)
             t = token_list[abs(r)]
-            t = list("".join(token_list).replace('c', faction_name(r)[0]))
+            t = list("".join(t).replace('c', faction_name(r)[0]))
 
             self.player_data[p] = {
                 "rank": r,
@@ -212,7 +211,7 @@ class BloodBoundGame:
         )
         victim = candidate[selection]
 
-        return (victim, is_give)
+        return victim, is_give
         
     def play_a_round(self):
         self.round += 1
@@ -230,8 +229,8 @@ class BloodBoundGame:
         self.log.append("%s is attacking %s" % (self.knife, self.victim))
 
         # Interfere (victim may be switched)
-        if fan not in self.player_data[self.victim]['item']:
-            interfered = yield from self.interfere(interfere_candidate)
+        if "fan" not in self.player_data[self.victim]['item']:
+            interfered = yield from self.interfere()
 
         # Attack
         if len(self.player_data[self.victim]["token_available"]) == 0:
@@ -244,7 +243,7 @@ class BloodBoundGame:
 
         icon = {
             'r': 'red', 'b': 'blue',
-            'w': 'white', 's': str(abs(data['rank'])),
+            'w': 'white', 's': str(abs(self.player_data[self.victim]['rank'])),
         }[selected_token]
 
         self.log.append("%s selected %s token" % (
@@ -254,7 +253,7 @@ class BloodBoundGame:
 
         # Skill
         if selected_token == "s":
-            yield from getattr(self, "skill" + data["rank"])()
+            yield from getattr(self, "skill" + str(abs(self.player_data[self.victim]["rank"])))()
 
         self.knife = self.victim
 
@@ -270,8 +269,8 @@ class BloodBoundGame:
             return
 
         if forced:
-            assert selected_token in data['token_available']
             selected_token = forced
+            assert selected_token in data['token_available']
         else:
             while True:
                 update, selection = yield from single_choice(
@@ -303,11 +302,11 @@ class BloodBoundGame:
 
         return selected_token
 
-    def interfere(self, candidate):
+    def interfere(self):
         self.saved_victim = None
 
         candidate = []
-        for player, data in self.player_data.iteritems():
+        for player, data in self.player_data.items():
             if player == self.knife or player == self.victim:
                 continue
             if "s" in data["token_available"]:
@@ -342,13 +341,13 @@ class BloodBoundGame:
 
             self.log.append("%s chooses %s" % (
                 display_name(update.effective_user),
-                ["interfere", "noop"][choice],
+                ["interfere", "noop"][selection],
             ))
 
             self.display_game_message()
 
         # victim decide
-        if len(ret) == 0:
+        if len(guardians) == 0:
             return 
 
         guardian_names = map(display_name, guardians)
@@ -366,9 +365,9 @@ class BloodBoundGame:
         else:
             self.log.append("%s accepted %s's interference" % (
                 self.victim,
-                
+                guardians[selection]
             ))
-            self.saved_victim, self.victim = self.victim, guardians[choice]
+            self.saved_victim, self.victim = self.victim, guardians[selection]
             return True
 
         return False
@@ -383,7 +382,7 @@ class BloodBoundGame:
         sgn = 1 if rank > 0 else -1
 
         cur = 0
-        for player, data in self.player_data.iteritems():
+        for player, data in self.player_data.items():
             if sgn * data["rank"] > cur:
                 cur = data["rank"]
                 curp = player
@@ -450,7 +449,7 @@ class BloodBoundGame:
             pdata['checked'].append(target)
             self.log.append("%s checked %s" % (
                 display_name(player), display_name(target),
-            )
+            ))
 
     def skill4(self):
         if not self.saved_victim:
@@ -467,7 +466,7 @@ class BloodBoundGame:
                 original_message=self.m,
                 candidate=['Kill', 'Heal'],
                 whitelist=[player],
-                text=generate_game_message(
+                text=self.generate_game_message(
                     "%s select kill or heal:" % display_name(player),
                 ),
                 static_buttons=self.static_buttons,
@@ -491,7 +490,7 @@ class BloodBoundGame:
                 original_message=self.m,
                 candidate=icons,
                 whitelist=[self.saved_victim],
-                text=generate_game_message("%s select token for healing:" %
+                text=self.generate_game_message("%s select token for healing:" %
                     display_name(self.saved_victim)
                 ),
                 static_buttons=self.static_buttons,
@@ -522,12 +521,12 @@ class BloodBoundGame:
         )
 
         self.victim = candidate[selection]
-        self.log("%s casted skill on %s" % (
+        self.log.append("%s casted skill on %s" % (
             display_name(player), display_name(self.victim),
         ))
 
         yield from self.select_and_apply_token(
-            forced='s' if 's' in data['token_available'] else None,
+            forced='s' if 's' in self.player_data[self.victim]['token_available'] else None,
         )
 
     def skill6(self):
@@ -580,7 +579,7 @@ class BloodBoundGame:
         self.player_data[target]['item'].append('fan')
         self.log.append("%s gave a fan to %s" % (
             display_name(player), display_name(target),
-        )
+        ))
 
     def skill10(self):
         raise NotImplementedError
@@ -601,7 +600,7 @@ class BloodBoundGame:
         l += self.log
         l.append("")
 
-        for player, data in self.player_data.iteritems():
+        for player, data in self.player_data.items():
             ret = "%-8s" % display_name(player)[:8]
             for t in data["token_used"]:
                 icon = {
@@ -640,7 +639,7 @@ def start_game(bot, update):
         update.message.reply_text("The game must be started in a group.")
         return
 
-    if BloodBoundGame.games.has_key(chat.id):
+    if chat.id in BloodBoundGame.games:
         update.message.reply_text("Another game is in progress.")
         return
 
@@ -680,7 +679,7 @@ def info_button(bot, update):
     ret = []
     ret.append(u"Player %s" % display_name(user))
     ret.append(u"Faction: %s" % E[faction_name(data['rank'])])
-    
+
     token_icons = ""
     for t in data["token_available"]:
         icon = {
@@ -692,9 +691,10 @@ def info_button(bot, update):
 
     ret.append(u"Available token: %s" % token_icons)
 
-    my_index = self.players.index(username)
+    my_index = self.players.index(user)
     after_index = (my_index + 1) % len(self.players)
     player_after = self.players[after_index]
+    rank = self.player_data[player_after]["rank"]
     after_faction = E[['red', 'blue'][(rank > 0) ^ (abs(rank) == 3)]]
     ret.append(u"Next player (%s) is %s" % (player_after, after_faction))
 
