@@ -1,9 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3.5
 # -*- coding: utf-8 -*-
 
 import logging
 import uuid
-from operator import neg
+import operator
 import random
 
 from telegram import InlineKeyboardButton, ParseMode
@@ -78,7 +78,7 @@ def faction_name(rank):
     if rank < 0: return 'blue'
 
 def display_name(user):
-    return user.user_name or user.full_name
+    return user.username or user.full_name
 
 class BloodBoundGame:
     games = {}
@@ -121,32 +121,32 @@ class BloodBoundGame:
 
         while True:
             update = yield [CallbackQueryHandler(
-                None, pattern=r"^" + str(id) + r"#.-?[0-9]+$",
+                None, pattern=r"^" + str(id) + r"#-?[0-9]+$",
             )]
             player = update.effective_user
             if player in self.players:
                 update.callback_query.answer("You are already in this game.")
                 continue
-            self.players.append(player)
 
-            self.log.append(display_name(player) + " joined")
-
-            if len(self.players) == 18: # Game will full after creator joins
-                player = self.creator
-                self.players.append(player)
-                self.log.append(display_name(player) + " joined")
+            if len(self.players) == 18 and player != self.creator:
+                update.callback_query.answer("Game full.")
+                continue
 
             if player == self.creator:
-                if len(self.players) <= 6:
+                if len(self.players) < 2:
                     update.callback_query.answer("Not enough players.")
                     continue
 
+                self.players.append(player)
+                self.log.append(display_name(player) + " joined")
                 self.log.append("Game commencing.")
                 self.m.edit_text(
                     text="\n".join(self.log),
                     reply_markup=None,
                 )
             else:
+                self.players.append(player)
+                self.log.append(display_name(player) + " joined")
                 self.m.edit_text(
                     text="\n".join(self.log),
                     reply_markup=reply_markup,
@@ -174,7 +174,7 @@ class BloodBoundGame:
             else:
                 blueteam.append(3)
                 blueteam += x[:count / 2 - 2]
-        res = list(map(neg, blueteam)) + redteam + whiteteam
+        res = list(map(operator.neg, blueteam)) + redteam + whiteteam
         random.shuffle(res)
         assert len(res) == count
         return res
@@ -822,7 +822,7 @@ def help(bot, update):
     update.message.reply_text("Use /start_game to test this bot.")
 
 def main():
-    svr = Updater("483679321:AAG9x30HL-o4UEIt5dn7tDgYTjsucx2YhWw")
+    svr = Updater("598818166:AAGkETNP_3hZ-cGLvrDnm_4iXVjGIgWKRvI")
 
     svr.dispatcher.add_handler(InteractiveHandler(
         start_game,
@@ -842,7 +842,7 @@ def main():
 
     svr.start_polling(
         clean=True,
-        timeout=5,
+        timeout=300,
     )
     svr.idle()
 
