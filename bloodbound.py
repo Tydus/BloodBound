@@ -133,8 +133,13 @@ class BloodBoundGame:
                 continue
 
             if player == self.creator:
-                if len(self.players) < 2:
+                #if len(self.players) < 5:
+                if len(self.players) < 1:
                     update.callback_query.answer("Not enough players.")
+                    continue
+
+                if len(self.players) % 2 == 0:
+                    update.callback_query.answer("Inquisitor is not implemented yet.")
                     continue
 
                 self.players.append(player)
@@ -144,6 +149,8 @@ class BloodBoundGame:
                     text="\n".join(self.log),
                     reply_markup=None,
                 )
+                update.callback_query.answer()
+                break
             else:
                 self.players.append(player)
                 self.log.append(display_name(player) + " joined")
@@ -151,8 +158,7 @@ class BloodBoundGame:
                     text="\n".join(self.log),
                     reply_markup=reply_markup,
                 )
-
-            update.callback_query.answer()
+                update.callback_query.answer()
 
     def shuffle_rank(self):
         count = len(self.players)
@@ -204,17 +210,20 @@ class BloodBoundGame:
             InlineKeyboardButton(E['info'], callback_data='info'),
         ]
 
+        self.round = 0
+        self.game_end = False
+
         # For skill 6
         self.shields = {}
         self.current_shield_id = 0
 
         self.knife = self.players[random.randint(0, len(self.players) - 1)]
 
-        self.round = 0
-
     def get_action(self):
         self.m = self.m.reply_text(
-            text=self.generate_game_message("%s action" % self.knife),
+            text=self.generate_game_message(
+                "%s action" % display_name(self.knife)
+            ),
             parse_mode=ParseMode.HTML,
         )
 
@@ -224,6 +233,7 @@ class BloodBoundGame:
             whitelist=[self.knife],
             static_buttons=self.static_buttons,
         )
+        import ipdb; ipdb.set_trace()
         is_give = (selection == 1)
 
         candidate = [display_name(x) for x in self.players if x != self.knife]
@@ -800,8 +810,10 @@ def info_button(bot, update):
     after_index = (my_index + 1) % len(self.players)
     player_after = self.players[after_index]
     rank = self.player_data[player_after]["rank"]
-    after_faction = E[['red', 'blue'][(rank > 0) ^ (abs(rank) == 3)]]
-    ret.append(u"Next player (%s) is %s" % (player_after, after_faction))
+    after_faction = E[['blue', 'red'][(rank > 0) ^ (abs(rank) == 3)]]
+    ret.append(u"Next player (%s) is %s" % (
+        display_name(player_after), after_faction,
+    ))
 
     if data['checked']:
         ret.append(u"Checked players:")

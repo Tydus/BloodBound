@@ -59,7 +59,7 @@ class InteractiveHandler(Handler):
         return tuple(key)
         
     def check_update(self, update):
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         context = self.conversations.get(self._get_key(update))
 
         if not context:
@@ -97,7 +97,7 @@ class InteractiveHandler(Handler):
         return False
 
     def handle_update(self, update, dispatcher):
-        import ipdb; ipdb.set_trace()
+        #import ipdb; ipdb.set_trace()
         context = self.conversations[self._get_key(update)]
 
         if not context['coroutine']:
@@ -119,7 +119,7 @@ class InteractiveHandler(Handler):
 
         elif context['current_handler']:
             # Has conversation, check next then fallback
-            import ipdb; ipdb.set_trace()
+            #import ipdb; ipdb.set_trace()
             try:
                 context['lock'].acquire()
                 yielded = context['coroutine'].send(update)
