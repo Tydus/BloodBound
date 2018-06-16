@@ -236,10 +236,9 @@ class BloodBoundGame:
             self.game_end = True
             return 
 
-        if interfered:
-            selected_token = 's'
-        else:
-            selected_token = yield from self.select_token()
+        selected_token = yield from self.select_and_apply_token(
+            forced='s' if interfered else None,
+        )
 
         icon = {
             'r': 'red', 'b': 'blue',
@@ -250,8 +249,6 @@ class BloodBoundGame:
             display_name(self.victim),
             E[icon],
         ))
-        data["token_available"].remove(selected_token)
-        data["token_used"].append(selected_token)
 
         # Skill
         if selected_token == "s":
@@ -263,33 +260,46 @@ class BloodBoundGame:
 
         self.debug()
 
-    def select_token(self, instruction=None):
-        data = self.player_data[username]
+    def select_and_apply_token(self, instruction=None, forced=None):
+        data = self.player_data[self.victim]
 
-        while True:
-            update, selection = yield from single_choice(
-                original_message=self.m,
-                candidate=[E["red"], E["blue"], E["white"], E["skill"]],
-                whitelist=[self.victim],
-                static_buttons=self.static_buttons,
-                text=self.generate_game_message(
-                    instruction or
-                    "%s select token:" % display_name(self.victim)
-                ),
-            )
+        if not data['token_available']:
+            self.game_end = True
+            return
 
-            # validate token selection
-            selected_token = ["r", "b", "w", "s"][selection]
+        if forced:
+            assert selected_token in data['token_available']
+            selected_token = forced
+        else:
+            while True:
+                update, selection = yield from single_choice(
+                    original_message=self.m,
+                    candidate=[E["red"], E["blue"], E["white"], E["skill"]],
+                    whitelist=[self.victim],
+                    static_buttons=self.static_buttons,
+                    text=self.generate_game_message(
+                        instruction or
+                        "%s select token:" % display_name(self.victim)
+                    ),
+                )
 
-            if selected_token in data['token_available']:
-                return selected_token
+                # validate token selection
+                selected_token = ["r", "b", "w", "s"][selection]
 
-            # TODO: white faction
+                if selected_token in data['token_available']:
+                    break
 
-            update.callback_query.answer(
-                "Selection invalid, please retry.",
-                show_alert=True,
-            )
+                # TODO: white faction
+
+                update.callback_query.answer(
+                    "Selection invalid, please retry.",
+                    show_alert=True,
+                )
+
+        data['token_available'].remove(selected_token)
+        data['token_used'].append(selected_token)
+
+        return selected_token
 
     def interfere(self, candidate):
         self.saved_victim = None
@@ -402,20 +412,12 @@ class BloodBoundGame:
             display_name(player), display_name(self.victim),
         ))
 
-        data = self.player_data[self.victim]
         for i in ['1st', '2nd']:
-            if not data['token_available']:
-                self.game_end = True
-                return
-
-            selected_token = yield from self.select_token(
+            yield from self.select_and_apply_token(
                 instruction="%s select %s token:" % (
                     display_name(self.victim), i
                 )
             )
-
-            data['token_available'].remove(selected_token)
-            data['token_used'].append(selected_token)
 
     def skill3(self):
         player = self.victim
@@ -472,14 +474,7 @@ class BloodBoundGame:
                 display_name(player),
                 display_name(self.saved_victim),
             )
-            if not data['token_available']:
-                self.game_end = True
-                return
-
-            selected_token = yield from self.select_token()
-
-            data['token_available'].remove(selected_token)
-            data['token_used'].append(selected_token)
+            yield from self.select_and_apply_token()
 
         else:
             candidate = data['token_used']
@@ -498,7 +493,7 @@ class BloodBoundGame:
                 static_buttons=self.static_buttons,
             )
 
-            select_token = candidate[selection]
+            selected_token = candidate[selection]
             self.log.append("%s healed %s" % (
                 display_name(player),
                 display_name(self.saved_victim),
@@ -527,19 +522,9 @@ class BloodBoundGame:
             display_name(player), display_name(self.victim),
         ))
 
-        data = self.player_data[self.victim]
-        if not data['token_available']:
-            self.game_end = True
-            return
-
-        if 's' in data['token_available']:
-            selected_token = 's'
-        else:
-            selected_token = yield from self.select_token()
-        
-        data['token_available'].remove(selected_token)
-        data['token_used'].append(selected_token)
-
+        yield from self.select_and_apply_token(
+            forced='s' if 's' in data['token_available'] else None,
+        )
 
     def skill6(self):
         raise NotImplementedError
@@ -557,19 +542,9 @@ class BloodBoundGame:
             display_name(target),
         ))
 
-        # Temporarily switch victim for select_token()
+        # Temporarily switch victim for select_and_apply_token()
         self.victim = target
-
-        data = self.player_data[self.victim]
-        if not data['token_available']:
-            self.game_end = True
-            return
-
-        selected_token = yield from self.select_token()
-        
-        data['token_available'].remove(selected_token)
-        data['token_used'].append(selected_token)
-
+        yield from self.select_and_apply_token()
         self.victim = player
 
     def skill8(self):
