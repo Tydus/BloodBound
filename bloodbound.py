@@ -35,8 +35,8 @@ E={
    "attack": u"🗡",
    "give": u"↪️",
    "skill": u"#️⃣",
-   "quill": u"quill", # Skill 1
-   "shield0": u"🖤",   # Skill 6
+   "quill": u"quill",      # Skill 1
+   "shield0": u"🖤",        # Skill 6
    "shield1": u"💛",
    "shield2": u"💙",
    "shield3": u"💜",
@@ -44,8 +44,10 @@ E={
    "sword1": u"💛",
    "sword2": u"💙",
    "sword3": u"💜",
-   "staff": u"staff", # Skill 8
-   "fan": u"fan",     # Skill 9
+   "staff": u"staff",      # Skill 8
+   "fan": u"fan",          # Skill 9
+   "real_curse": u"curse", # Skill 10
+   "fake_curse": u"curse", # Skill 10
    "reserved": u"🖌🗡🛡🔱🔰🔮💢♨️㊙️"
 }
 
@@ -87,7 +89,7 @@ token_list = [
 # y is decided while the token is spelt out,
 # and should be removed while drawing back.
 
-# Get faction name (Red/Blue/White) from rank
+# Get user's REAL faction name (Red/Blue/White) from rank
 def faction_name(rank):
     if abs(rank) == 10: return 'brown'
     if rank > 0: return 'red'
@@ -113,16 +115,28 @@ class BloodBoundGame:
         while not self.game_end:
             yield from self.play_a_round()
 
+        self.show_winner()
+
+    def show_winner(self):
         victim_rank = self.player_data[self.victim]["rank"]
+
+        if abs(victim_rank) == 10:
+            self.display_game_message("Inquisitor wins!")
+            return
 
         vf = faction_name( victim_rank)
         of = faction_name(-victim_rank)
 
         if victim_rank != self.target[of]: # Wrong target
-            self.display_game_message("%s wins!" % E[vf])
+            winner = vf
         else:
-            self.display_game_message("%s wins!" % E[of])
+            winner = of
 
+        if 'real_curse' in self.player_data[self.target[winner]]['items']:
+            self.display_game_message("Inquisitor wins!")
+            return
+
+        self.display_game_message("%s wins!" % E[winner])
 
     def wait_for_players(self, update):
         self.log = ["Looking for players"]
@@ -204,10 +218,13 @@ class BloodBoundGame:
     def prepare_game(self):
         self.player_data = dict()
         ranks = self.shuffle_rank()
+
         for p, r in zip(self.players, ranks):
             # convert 'c' to the real color (r / b)
             t = token_list[abs(r)]
             t = list("".join(t).replace('c', faction_name(r)[0]))
+
+            if abs[r] == 10: self.inquisitor = p
 
             self.player_data[p] = {
                 "rank": r,
@@ -233,6 +250,15 @@ class BloodBoundGame:
         self.shields = {}
         self.current_shield_id = 0
 
+        # For skill 10
+        if len(self.players) % 2 == 1:
+            self.available_curse = (
+                ["real_curse"] +
+                ["fake_curse"] * (len(self.players) - 5) / 2
+            )
+        else:
+            self.available_curse = None
+
         self.knife = self.players[random.randint(0, len(self.players) - 1)]
 
     def get_action(self):
@@ -243,39 +269,52 @@ class BloodBoundGame:
             parse_mode=ParseMode.HTML,
         )
 
-        _, selection = yield from single_choice(
-            original_message=self.m,
-            candidate=['Attack', 'Give'],
-            whitelist=[self.knife],
-            static_buttons=self.static_buttons,
-        )
-        import ipdb; ipdb.set_trace()
-        is_give = (selection == 1)
+        data = self.player_data[self.knife]
+
+        if abs(data['rank']) == 10 and data['token_available'] == []:
+            # Skill 10
+            self.log.append("Inquisitor %s cannot attack" % (display_name(self.inquisitor)))
+            is_give = 1
+        else:
+            _, selection = yield from single_choice(
+                original_message=self.m,
+                candidate=['Attack', 'Pass'],
+                whitelist=[self.knife],
+                text=self.generate_game_message(
+                    "%s select action" % display_name(self.knife)
+                ),
+                static_buttons=self.static_buttons,
+            )
+            import ipdb; ipdb.set_trace()
+            is_give = (selection == 1)
 
         candidate = [display_name(x) for x in self.players if x != self.knife]
         _, selection = yield from single_choice(
             original_message=self.m,
             candidate=candidate,
             whitelist=[self.knife],
+            text=self.generate_game_message(
+                "%s select target" % display_name(self.knife)
+            ),
             static_buttons=self.static_buttons,
         )
-        victim = candidate[selection]
+        target = candidate[selection]
 
-        return victim, is_give
+        return target, is_give
         
     def play_a_round(self):
         self.round += 1
         self.log = []
 
-        victim, is_give = yield from self.get_action()
+        target, is_give = yield from self.get_action()
 
         if is_give:
-            old_knife, self.knife = self.knife, victim
+            old_knife, self.knife = self.knife, target
             self.log.append("%s gave the knife to %s." % (old_knife, self.knife))
             self.display_game_message()
             return
 
-        self.victim = victim
+        self.victim = target
         self.log.append("%s is attacking %s" % (self.knife, self.victim))
 
         # Interfere (victim may be switched)
@@ -445,7 +484,7 @@ class BloodBoundGame:
 
         data['item'].append('quill')
 
-        vf = faction_name(rank)
+        vf = faction_name(rank) # will not be brown
         sgn = 1 if rank > 0 else -1
 
         cur = 0
@@ -713,10 +752,45 @@ class BloodBoundGame:
         ))
 
     def skill10(self):
-        raise NotImplementedError
+        player = self.victim
 
-        # Dummy yield to make function generator
-        yield from range(0)
+        candidate = [x
+            for x in self.players
+            if x != player
+            #and 'real_curse' not in self.player_data[x]['item']
+            #and 'fake_curse' not in self.player_data[x]['item']
+        ]
+
+        _, selection = yield from gamebot.single_choice(
+            original_message=self.m,
+            candidate=map(display_name, candidate),
+            whitelist=[player],
+            text=self.generate_game_message(
+                "%s give the curse to a player:" % display_name(player),
+            ),
+            static_buttons=self.static_buttons,
+        )
+        target = candidate[selection]
+
+        self.available_curse.shuffle()
+
+        _, selection = yield from gamebot.single_choice(
+            original_message=self.m,
+            candidate=map(E.get, self.available_curse),
+            whitelist=[target],
+            text=self.generate_game_message(
+                "%s select a curse:" % display_name(target),
+            ),
+            static_buttons=self.static_buttons,
+        )
+
+        curse = self.available_curse[selection]
+        self.player_data[target]['item'].append(curse)
+        self.available_curse.remove(curse)
+
+        self.log.append("%s gave a curse to %s" % (
+            display_name(player), display_name(target),
+        ))
 
     def display_game_message(self, notice=""):
         self.m = self.m.edit_text(
