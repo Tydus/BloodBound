@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.5
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import logging
@@ -239,7 +239,7 @@ class BloodBoundGame:
     def prepare_game(self):
         self.player_data = dict()
         #ranks = self.shuffle_rank()
-        ranks = [9, -7]
+        ranks = [-6, 4]
 
         for p, r in zip(self.players, ranks):
             # convert 'c' to the real color (r / b)
@@ -331,6 +331,9 @@ class BloodBoundGame:
         self.log.append("%s is attacking %s" % (self.knife, self.victim))
 
         # Interfere (victim may be switched)
+        interfered = False
+
+        # Skill 9
         if "fan" not in self.player_data[self.victim]['item']:
             interfered = yield from self.interfere()
 
@@ -346,7 +349,7 @@ class BloodBoundGame:
             )
 
             # Game end
-            if not selected_token: return
+            if self.game_end: return
 
             self.log.append("%s selected %s token" % (
                 self.victim, E[selected_token[0]],
@@ -354,7 +357,6 @@ class BloodBoundGame:
 
             # Skill
             if selected_token[-1] == "s":
-                ipdb.set_trace()
                 func = getattr(self, "skill" + str(abs(self.player_data[self.victim]["rank"])))
                 yield from func()
 
@@ -369,7 +371,7 @@ class BloodBoundGame:
 
         if not data['token_available']:
             self.game_end = True
-            return
+            return None
 
         if forced:
             selected_token = forced
@@ -417,6 +419,10 @@ class BloodBoundGame:
 
         data['token_available'].remove(selected_token[-1])
         data['token_used'].append(selected_token)
+
+        # Skill 6
+        if data['token_available'] == [] and abs(data['rank']) == 6:
+            self.skill6_invalidate()
 
         return selected_token
 
@@ -625,8 +631,6 @@ class BloodBoundGame:
             static_buttons=self.static_buttons,
         )
 
-        ipdb.set_trace()
-
         self.victim = candidate[selection]
         self.log.append("%s casted skill on %s" % (player, self.victim))
 
@@ -649,7 +653,6 @@ class BloodBoundGame:
             static_buttons=self.static_buttons,
         )
 
-        ipdb.set_trace()
         target = candidate[selection]
 
         self.player_data[player]['item'].append('sword%d'  % self.current_shield_id)
@@ -664,15 +667,18 @@ class BloodBoundGame:
         self.current_shield_id += 1
 
     def skill6_invalidate(self):
-        ipdb.set_trace()
         player = self.victim
 
-        for n, i in list(self.shields.items()): # a read-only copy
-            if i['sword'] == player:
-                self.player_data[i['sword'] ].remove('sword%d'  % str(n))
-                self.player_data[i['shield']].remove('shield%d' % str(n))
-                self.log.append("%s's swords are invalidated" % player)
-                del self.shields[i]
+        has_sword = False
+        for k, v in list(self.shields.items()): # a read-only copy
+            if v['sword'] == player:
+                self.player_data[v['sword'] ]['item'].remove('sword%d'  % k)
+                self.player_data[v['shield']]['item'].remove('shield%d' % k)
+                has_sword = True
+                del self.shields[k]
+
+        if has_sword:
+            self.log.append("%s's swords are invalidated" % player)
 
     def skill6_isprotected(self, player):
         for n, i in self.shields.items():
@@ -682,7 +688,6 @@ class BloodBoundGame:
         return False
 
     def skill7(self):
-        ipdb.set_trace()
         player = self.victim
         target = self.knife
 
@@ -691,7 +696,6 @@ class BloodBoundGame:
         # Temporarily switch victim for select_and_apply_token()
         self.victim = target
         yield from self.select_and_apply_token()
-        ipdb.set_trace()
         self.victim = player
 
     def skill8(self):
@@ -717,7 +721,6 @@ class BloodBoundGame:
             static_buttons=self.static_buttons,
         )
 
-        ipdb.set_trace()
         target = candidate[selection]
         self.player_data[target]['item'].append('staff')
         self.log.append("%s gave a staff to %s" % (player, target))
@@ -741,7 +744,6 @@ class BloodBoundGame:
             static_buttons=self.static_buttons,
         )
 
-        ipdb.set_trace()
         target = candidate[selection]
         self.player_data[target]['item'].append('fan')
         self.log.append("%s gave a fan to %s" % (player, target))
