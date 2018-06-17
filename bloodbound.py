@@ -201,6 +201,7 @@ class BloodBoundGame:
                 update.callback_query.answer()
 
     def shuffle_rank(self):
+        ipdb.set_trace()
         ret = []
 
         count = len(self.players)
@@ -210,7 +211,7 @@ class BloodBoundGame:
             ret.append(random.choice([-10, 10]))
             count -= 1
         
-        count /= 2
+        count //= 2
 
         random.shuffle(cards)
         ret += cards[:count]
@@ -466,7 +467,7 @@ class BloodBoundGame:
         if len(guardians) == 0:
             return 
 
-        guardian_names = map(display_name, guardians)
+        guardian_names = list(map(display_name, guardians))
 
         _, selection = yield from single_choice(
             original_message=self.m,
@@ -518,13 +519,14 @@ class BloodBoundGame:
 
         _, selection = yield from gamebot.single_choice(
             original_message=self.m,
-            candidate=map(display_name, candidate),
+            candidate=list(map(display_name, candidate)),
             whitelist=[player],
             text=self.generate_game_message(
                 "%s a player to trigger skill:" % display_name(player),
             ),
             static_buttons=self.static_buttons,
         )
+        ipdb.set_trace()
         self.victim = candidate[selection]
         self.log("%s casted skill on %s" % (
             display_name(player), display_name(self.victim),
@@ -554,13 +556,14 @@ class BloodBoundGame:
 
             _, selection = yield from gamebot.single_choice(
                 original_message=self.m,
-                candidate=map(display_name, candidate),
+                candidate=list(map(display_name, candidate)),
                 whitelist=[player],
                 text=self.generate_game_message(
                     "%s select %s player to check:" % (display_name(player), i)
                 ),
                 static_buttons=self.static_buttons,
             )
+            ipdb.set_trace()
 
             target = candidate[selection]
             pdata['checked'].append(target)
@@ -589,6 +592,7 @@ class BloodBoundGame:
                 static_buttons=self.static_buttons,
             )
 
+        ipdb.set_trace()
         if selection == 0:
             self.log.append("%s killed %s" % (
                 display_name(player),
@@ -598,18 +602,23 @@ class BloodBoundGame:
 
         else:
             candidate = data['token_used']
+            if len(candidate) == 1:
+                selected_token = candidate[0]
+            else:
+                _, selection = yield from single_choice(
+                    original_message=self.m,
+                    candidate=[E[i[0]] for i in candidate],
+                    whitelist=[self.saved_victim],
+                    text=self.generate_game_message(
+                        "%s select token for healing:" %
+                        display_name(self.saved_victim)
+                    ),
+                    static_buttons=self.static_buttons,
+                )
 
-            _, selection = yield from single_choice(
-                original_message=self.m,
-                candidate=[E[i[0]] for i in candidate],
-                whitelist=[self.saved_victim],
-                text=self.generate_game_message("%s select token for healing:" %
-                    display_name(self.saved_victim)
-                ),
-                static_buttons=self.static_buttons,
-            )
+                ipdb.set_trace()
+                selected_token = candidate[selection]
 
-            selected_token = candidate[selection]
             self.log.append("%s healed %s" % (
                 display_name(player),
                 display_name(self.saved_victim),
@@ -625,13 +634,15 @@ class BloodBoundGame:
 
         _, selection = yield from gamebot.single_choice(
             original_message=self.m,
-            candidate=map(display_name, candidate),
+            candidate=list(map(display_name, candidate)),
             whitelist=[player],
             text=self.generate_game_message(
                 "%s a player to trigger skill:" % display_name(player),
             ),
             static_buttons=self.static_buttons,
         )
+
+        ipdb.set_trace()
 
         self.victim = candidate[selection]
         self.log.append("%s casted skill on %s" % (
@@ -649,7 +660,7 @@ class BloodBoundGame:
 
         _, selection = yield from gamebot.single_choice(
             original_message=self.m,
-            candidate=map(display_name, candidate),
+            candidate=list(map(display_name, candidate)),
             whitelist=[player],
             text=self.generate_game_message(
                 "%s give a shield to a player:" % display_name(player),
@@ -657,6 +668,7 @@ class BloodBoundGame:
             static_buttons=self.static_buttons,
         )
 
+        ipdb.set_trace()
         target = candidate[selection]
 
         self.player_data[player]['item'].append('sword%d'  % self.current_shield_id)
@@ -673,6 +685,7 @@ class BloodBoundGame:
         self.current_shield_id += 1
 
     def skill6_invalidate(self):
+        ipdb.set_trace()
         player = self.victim
 
         for n, i in list(self.shields.items()): # a read-only copy
@@ -690,6 +703,7 @@ class BloodBoundGame:
         return False
 
     def skill7(self):
+        ipdb.set_trace()
         player = self.victim
         target = self.knife
 
@@ -701,6 +715,7 @@ class BloodBoundGame:
         # Temporarily switch victim for select_and_apply_token()
         self.victim = target
         yield from self.select_and_apply_token()
+        ipdb.set_trace()
         self.victim = player
 
     def skill8(self):
@@ -718,7 +733,7 @@ class BloodBoundGame:
 
         _, selection = yield from gamebot.single_choice(
             original_message=self.m,
-            candidate=map(display_name, candidate),
+            candidate=list(map(display_name, candidate)),
             whitelist=[player],
             text=self.generate_game_message(
                 "%s give the staff to a player:" % display_name(player),
@@ -726,6 +741,7 @@ class BloodBoundGame:
             static_buttons=self.static_buttons,
         )
 
+        ipdb.set_trace()
         target = candidate[selection]
         self.player_data[target]['item'].append('staff')
         self.log.append("%s gave a staff to %s" % (
@@ -744,7 +760,7 @@ class BloodBoundGame:
 
         _, selection = yield from gamebot.single_choice(
             original_message=self.m,
-            candidate=map(display_name, candidate),
+            candidate=list(map(display_name, candidate)),
             whitelist=[player],
             text=self.generate_game_message(
                 "%s give the fan to a player:" % display_name(player),
@@ -752,6 +768,7 @@ class BloodBoundGame:
             static_buttons=self.static_buttons,
         )
 
+        ipdb.set_trace()
         target = candidate[selection]
         self.player_data[target]['item'].append('fan')
         self.log.append("%s gave a fan to %s" % (
@@ -759,6 +776,7 @@ class BloodBoundGame:
         ))
 
     def skill10(self):
+        ipdb.set_trace()
         player = self.victim
 
         candidate = [x
@@ -770,7 +788,7 @@ class BloodBoundGame:
 
         _, selection = yield from gamebot.single_choice(
             original_message=self.m,
-            candidate=map(display_name, candidate),
+            candidate=list(map(display_name, candidate)),
             whitelist=[player],
             text=self.generate_game_message(
                 "%s give the curse to a player:" % display_name(player),
@@ -783,7 +801,7 @@ class BloodBoundGame:
 
         _, selection = yield from gamebot.single_choice(
             original_message=self.m,
-            candidate=map(E.get, self.available_curse),
+            candidate=list(map(E.get, self.available_curse)),
             whitelist=[target],
             text=self.generate_game_message(
                 "%s select a curse:" % display_name(target),
