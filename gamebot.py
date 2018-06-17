@@ -18,7 +18,7 @@ def _make_keyboard(buttons):
 def _make_choice_keyboard(id, choices, selection=[], static_buttons=[]):
     ret = []
     for n, i in enumerate(choices):
-        text = u'✔️' if n + 1 in selection else i[:20]
+        text = u'✔️' if n + 1 in selection else str(i)[:20]
 
         ret.append(InlineKeyboardButton(text, callback_data="%s#%d" % (id, n + 1)))
 
