@@ -34,23 +34,37 @@ E={
    "10": u"*️⃣",
    "attack": u"🗡",
    "give": u"↪️",
-   "skill": u"💢",
-   "interfere": u"⚠️",
-   "fan": u"fan",
-   "wand": u"wand",
-   "shield0": u"🖤",
+   "skill": u"#️⃣",
+   "quill": u"quill", # Skill 1
+   "shield0": u"🖤",   # Skill 6
    "shield1": u"💛",
    "shield2": u"💙",
    "shield3": u"💜",
-   "sword0": u"sword0",
-   "sword1": u"sword1",
-   "sword2": u"sword2",
-   "sword3": u"sword3",
+   "sword0": u"🖤",
+   "sword1": u"💛",
+   "sword2": u"💙",
+   "sword3": u"💜",
+   "staff": u"staff", # Skill 8
+   "fan": u"fan",     # Skill 9
    "reserved": u"🖌🗡🛡🔱🔰🔮💢♨️㊙️"
 }
 
+rank_name = [
+    None,
+    "Elder",
+    "Assassin",
+    "Harlequin",
+    "Alchemist",
+    "Mentalist",
+    "Guardian",
+    "Berserker",
+    "Mage",
+    "Courtesan",
+    "Inquisitor",
+]
+
 token_list = [
-    ["a", "a", "s"], # 0
+    None,
     ["c", "c", "s"],
     ["w", "w", "s"],
     ["w", "w", "s"],
@@ -59,14 +73,15 @@ token_list = [
     ["c", "c", "s"],
     ["c", "w", "s"],
     ["c", "w", "s"],
-    ["c", "w", "s"]
+    ["c", "w", "s"],
+    ["a", "a", "s"],
 ]
 
 # About Token colors:
 # x or xy
 # x: display token color
 # y: real token color (if not eq display color)
-# e.g.: 1 with a 'wand' can select a 'wr' token,
+# e.g.: 1 with a 'staff' can select a 'wr' token,
 # which means a red token displayed in white.
 #
 # y is decided while the token is spelt out,
@@ -74,6 +89,7 @@ token_list = [
 
 # Get faction name (Red/Blue/White) from rank
 def faction_name(rank):
+    if abs(rank) == 10: return 'brown'
     if rank > 0: return 'red'
     if rank < 0: return 'blue'
 
@@ -128,7 +144,7 @@ class BloodBoundGame:
                 update.callback_query.answer("You are already in this game.")
                 continue
 
-            if len(self.players) == 18 and player != self.creator:
+            if len(self.players) == 11 and player != self.creator:
                 update.callback_query.answer("Game full.")
                 continue
 
@@ -165,11 +181,11 @@ class BloodBoundGame:
         # no 3rd
         redteam = [1]
         blueteam = [1]
-        whiteteam = []
+        brownteam = []
         x = list(range(2, 10))
         random.shuffle(x)
         if count % 2 == 1:
-            whiteteam.append(0)
+            brownteam.append(random.choice([-10, 10]))
             count -= 1
         if count > 2:
             redteam += x[:count / 2 - 1]
@@ -180,7 +196,7 @@ class BloodBoundGame:
             else:
                 blueteam.append(3)
                 blueteam += x[:count / 2 - 2]
-        res = list(map(operator.neg, blueteam)) + redteam + whiteteam
+        res = list(map(operator.neg, blueteam)) + redteam + brownteam
         random.shuffle(res)
         assert len(res) == count
         return res
@@ -332,8 +348,8 @@ class BloodBoundGame:
                     selected_token += 'a'
                     break
 
-                # wand
-                if 'wand' in data['items'] and selected_token == 'w':
+                # Skill 8
+                if 'staff' in data['items'] and selected_token == 'w':
                     color = faction_name(data['rank'])[0]
                     if color in data['token_available']:
                         selected_token = 'w' + color
@@ -427,7 +443,7 @@ class BloodBoundGame:
         data = self.player_data[self.victim]
         rank = data['rank']
 
-        data['item'].append('feather')
+        data['item'].append('quill')
 
         vf = faction_name(rank)
         sgn = 1 if rank > 0 else -1
@@ -645,13 +661,13 @@ class BloodBoundGame:
         player = self.victim
         pdata = self.player_data[player]
 
-        if 'wand' not in pdata['item']:
-            pdata['item'].append('wand')
+        if 'staff' not in pdata['item']:
+            pdata['item'].append('staff')
 
         candidate = [x
             for x in self.players
             if x != player
-            and 'wand' not in self.player_data[x]['item']
+            and 'staff' not in self.player_data[x]['item']
         ]
 
         _, selection = yield from gamebot.single_choice(
@@ -659,14 +675,14 @@ class BloodBoundGame:
             candidate=map(display_name, candidate),
             whitelist=[player],
             text=self.generate_game_message(
-                "%s give the wand to a player:" % display_name(player),
+                "%s give the staff to a player:" % display_name(player),
             ),
             static_buttons=self.static_buttons,
         )
 
         target = candidate[selection]
-        self.player_data[target]['item'].append('wand')
-        self.log.append("%s gave a wand to %s" % (
+        self.player_data[target]['item'].append('staff')
+        self.log.append("%s gave a staff to %s" % (
             display_name(player), display_name(target),
         ))
 
@@ -794,6 +810,7 @@ def info_button(bot, update):
     ret = []
     ret.append(u"Player %s" % display_name(user))
     ret.append(u"Faction: %s" % E[faction_name(data['rank'])])
+    ret.append(u"Rank: %d(%s)" % (abs(data['rank']), rank_name[abs(data['rank'])]))
 
     token_icons = ""
     for t in data["token_available"]:
