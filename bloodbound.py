@@ -843,6 +843,8 @@ def start_game(bot, update):
         yield from self.main(bot, update)
     except ConversationCancelled as e:
         self.cancel()
+    finally:
+        del BloodBoundGame.games[chat.id]
 
 def cancel_game(bot, update):
     chat = update.effective_chat
@@ -854,7 +856,6 @@ def cancel_game(bot, update):
         return
 
     update.cancel_current_conversation()
-    del BloodBoundGame.games[chat.id]
 
 def info_button(bot, update):
     # Get `self` instance manually
