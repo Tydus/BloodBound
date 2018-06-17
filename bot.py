@@ -5,7 +5,6 @@ import logging
 import uuid
 import operator
 import random
-import ipdb
 import os
 
 import telegram
@@ -184,15 +183,8 @@ class BloodBoundGame:
                 continue
 
             if player == self.creator:
-                #if len(self.players) < 5:
-                if len(self.players) < 1:
+                if len(self.players) < 5:
                     update.callback_query.answer("Not enough players.", True)
-                    continue
-
-                if len(self.players) % 2 == 0:
-                    update.callback_query.answer(
-                        "Inquisitor is not implemented yet.", True,
-                    )
                     continue
 
                 self.players.append(player)
@@ -238,8 +230,7 @@ class BloodBoundGame:
 
     def prepare_game(self):
         self.player_data = dict()
-        #ranks = self.shuffle_rank()
-        ranks = [-6, 4]
+        ranks = self.shuffle_rank()
 
         for p, r in zip(self.players, ranks):
             # convert 'c' to the real color (r / b)
@@ -266,15 +257,15 @@ class BloodBoundGame:
 
         self.game_end = False
 
-        # For skill 6
+        # Skill 6
         self.shields = {}
         self.current_shield_id = 0
 
-        # For skill 10
+        # Skill 10
         if len(self.players) % 2 == 1:
             self.available_curse = (
                 ["real_curse"] +
-                ["fake_curse"] * (len(self.players) - 5) / 2
+                ["fake_curse"] * ((len(self.players) - 5) // 2)
             )
         else:
             self.available_curse = None
@@ -455,6 +446,9 @@ class BloodBoundGame:
                 whitelist=candidate,
                 blacklist=blacklist,
                 id=id,
+                text=self.generate_game_message(
+                    "everyone else select interfere or pass"
+                ),
                 static_buttons=self.static_buttons,
             )
 
@@ -577,10 +571,13 @@ class BloodBoundGame:
 
         if not data['token_used']:
             selection = 0 # kill
+            self.log.append("%s has no token shown, %s must kill %s" %(
+                self.saved_victim, self.victim, self.saved_victim,
+            ))
         else:
             _, selection = yield from single_choice(
                 original_message=self.m,
-                candidate=['Kill', 'Heal'],
+                candidate=['kill', 'heal'],
                 whitelist=[player],
                 text=self.generate_game_message(
                     "%s select kill or heal:" % player,
@@ -588,10 +585,12 @@ class BloodBoundGame:
                 static_buttons=self.static_buttons,
             )
 
-        ipdb.set_trace()
         if selection == 0:
+            # Temporarily switch victim 
+            self.victim = self.saved_victim
             self.log.append("%s killed %s" % (player, self.saved_victim))
             yield from self.select_and_apply_token()
+            self.victim = player
 
         else:
             candidate = data['token_used']
@@ -608,7 +607,6 @@ class BloodBoundGame:
                     static_buttons=self.static_buttons,
                 )
 
-                ipdb.set_trace()
                 selected_token = candidate[selection]
 
             self.log.append("%s healed %s" % (player, self.saved_victim))
@@ -749,8 +747,11 @@ class BloodBoundGame:
         self.log.append("%s gave a fan to %s" % (player, target))
 
     def skill10(self):
-        ipdb.set_trace()
         player = self.victim
+
+        if self.available_curse == []:
+            self.log.append("%s have no curses left" % player)
+            return
 
         candidate = [x
             for x in self.players
@@ -770,7 +771,7 @@ class BloodBoundGame:
         )
         target = candidate[selection]
 
-        self.available_curse.shuffle()
+        random.shuffle(self.available_curse)
 
         _, selection = yield from single_choice(
             original_message=self.m,
