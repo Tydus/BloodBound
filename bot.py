@@ -47,7 +47,7 @@ E={
    "7": u"7️⃣",
    "8": u"8️⃣",
    "9": u"9️⃣",
-   "10": u"*️⃣",
+   "0": u"*️⃣",
    "attack": u"🗡",
    "give": u"↪️",
    "s": u"#️⃣",
@@ -107,7 +107,7 @@ token_list = [
 
 # Get user's REAL faction name (Red/Blue/White) from rank
 def faction_name(rank):
-    if abs(rank) == 10: return 'brown'
+    if abs(rank) == 10: return 'white'
     if rank > 0: return 'red'
     if rank < 0: return 'blue'
 
@@ -406,7 +406,7 @@ class BloodBoundGame:
 
         # convert skill token to display token
         if selected_token == 's':
-            selected_token = str(abs(data['rank'])) + 's'
+            selected_token = "%ds" % abs(data['rank']) % 10
 
         data['token_available'].remove(selected_token[-1])
         data['token_used'].append(selected_token)
@@ -492,7 +492,7 @@ class BloodBoundGame:
 
         data['item'].append('quill')
 
-        vf = faction_name(data['rank']) # will not be brown
+        vf = faction_name(data['rank']) # will not be white
 
         ranks = [
             i['rank']
@@ -878,7 +878,15 @@ def info_button(bot, update):
     ret.append(u"Player %s" % display_name(user))
     ret.append(u"Faction: %s" % E[faction_name(data['rank'])[0]])
     ret.append(u"Rank: %d(%s)" % (abs(data['rank']), rank_name[abs(data['rank'])]))
-    ret.append(u"Available token: %s" % "".join([E[t[0]] for t in data['token_available']]))
+
+    icons = ""
+    for t in data['token_available']:
+        if t == 's':
+            icons += E[str(abs(data['rank']) % 10)]
+        else:
+            icons += E[t]
+
+    ret.append(u"Available token: %s" % icons)
 
     my_index = self.players.index(user)
     after_index = (my_index + 1) % len(self.players)
