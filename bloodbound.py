@@ -201,29 +201,27 @@ class BloodBoundGame:
                 update.callback_query.answer()
 
     def shuffle_rank(self):
+        ret = []
+
         count = len(self.players)
-        # no 3rd
-        redteam = [1]
-        blueteam = [1]
-        brownteam = []
-        x = list(range(2, 10))
-        random.shuffle(x)
+        cards = list(range(1, 10))
+
         if count % 2 == 1:
-            brownteam.append(random.choice([-10, 10]))
+            ret.append(random.choice([-10, 10]))
             count -= 1
-        if count > 2:
-            redteam += x[:count / 2 - 1]
-            random.shuffle(x)
-            x.remove(3)
-            if 3 not in redteam:
-                blueteam += x[:count / 2 - 1]
-            else:
-                blueteam.append(3)
-                blueteam += x[:count / 2 - 2]
-        res = list(map(operator.neg, blueteam)) + redteam + brownteam
-        random.shuffle(res)
-        assert len(res) == count
-        return res
+        
+        count /= 2
+
+        random.shuffle(cards)
+        ret += cards[:count]
+
+        random.shuffle(cards)
+        ret += list(map(operator.neg, cards[:count]))
+
+        random.shuffle(ret)
+
+        assert len(ret) == len(self.players)
+        return ret
 
     def prepare_game(self):
         self.player_data = dict()
@@ -243,9 +241,10 @@ class BloodBoundGame:
             }
         self.debug()
 
-        # Set target to blue 1 and red 1 respectively
-        self.target = {'red': -1, 'blue': 1}
-
+        self.target = {
+            'red':  max(i for i in ranks if i < 0),
+            'blue': min(i for i in ranks if i > 0),
+        }
 
         self.static_buttons=[
             InlineKeyboardButton(E['info'], callback_data='info'),
