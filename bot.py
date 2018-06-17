@@ -6,6 +6,7 @@ import uuid
 import operator
 import random
 import ipdb
+import os
 
 import telegram
 # Hook User's repr and str to display cleanly
@@ -901,7 +902,7 @@ def help(bot, update):
     update.message.reply_text("Use /start_game to test this bot.")
 
 def main():
-    svr = Updater("598818166:AAGkETNP_3hZ-cGLvrDnm_4iXVjGIgWKRvI")
+    svr = Updater(os.environ['BOT_TOKEN'])
 
     svr.dispatcher.add_handler(InteractiveHandler(
         start_game,
