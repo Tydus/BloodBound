@@ -237,7 +237,8 @@ class BloodBoundGame:
 
     def prepare_game(self):
         self.player_data = dict()
-        ranks = self.shuffle_rank()
+        #ranks = self.shuffle_rank()
+        ranks = [9, -7]
 
         for p, r in zip(self.players, ranks):
             # convert 'c' to the real color (r / b)
@@ -513,7 +514,7 @@ class BloodBoundGame:
 
         candidate = [x for x in self.players if x != player]
 
-        _, selection = yield from gamebot.single_choice(
+        _, selection = yield from single_choice(
             original_message=self.m,
             candidate=candidate,
             whitelist=[player],
@@ -522,9 +523,8 @@ class BloodBoundGame:
             ),
             static_buttons=self.static_buttons,
         )
-        ipdb.set_trace()
         self.victim = candidate[selection]
-        self.log("%s casted skill on %s" % (player, self.victim))
+        self.log.append("%s casted skill on %s" % (player, self.victim))
 
         for i in ['1st', '2nd']:
             yield from self.select_and_apply_token(
@@ -546,7 +546,7 @@ class BloodBoundGame:
                 self.log.append("No enough player to be checked.")
                 break
 
-            _, selection = yield from gamebot.single_choice(
+            _, selection = yield from single_choice(
                 original_message=self.m,
                 candidate=candidate,
                 whitelist=[player],
@@ -555,7 +555,6 @@ class BloodBoundGame:
                 ),
                 static_buttons=self.static_buttons,
             )
-            ipdb.set_trace()
 
             target = candidate[selection]
             pdata['checked'].append(target)
@@ -615,7 +614,7 @@ class BloodBoundGame:
 
         candidate = [x for x in self.players if x != player]
 
-        _, selection = yield from gamebot.single_choice(
+        _, selection = yield from single_choice(
             original_message=self.m,
             candidate=candidate,
             whitelist=[player],
@@ -639,7 +638,7 @@ class BloodBoundGame:
 
         candidate = [x for x in self.players if x != player]
 
-        _, selection = yield from gamebot.single_choice(
+        _, selection = yield from single_choice(
             original_message=self.m,
             candidate=candidate,
             whitelist=[player],
@@ -707,7 +706,7 @@ class BloodBoundGame:
             and 'staff' not in self.player_data[x]['item']
         ]
 
-        _, selection = yield from gamebot.single_choice(
+        _, selection = yield from single_choice(
             original_message=self.m,
             candidate=candidate,
             whitelist=[player],
@@ -731,7 +730,7 @@ class BloodBoundGame:
             and 'fan' not in self.player_data[x]['item']
         ]
 
-        _, selection = yield from gamebot.single_choice(
+        _, selection = yield from single_choice(
             original_message=self.m,
             candidate=candidate,
             whitelist=[player],
@@ -757,7 +756,7 @@ class BloodBoundGame:
             #and 'fake_curse' not in self.player_data[x]['item']
         ]
 
-        _, selection = yield from gamebot.single_choice(
+        _, selection = yield from single_choice(
             original_message=self.m,
             candidate=candidate,
             whitelist=[player],
@@ -770,7 +769,7 @@ class BloodBoundGame:
 
         self.available_curse.shuffle()
 
-        _, selection = yield from gamebot.single_choice(
+        _, selection = yield from single_choice(
             original_message=self.m,
             candidate=list(map(E.get, self.available_curse)),
             whitelist=[target],
@@ -890,9 +889,9 @@ def info_button(bot, update):
         ret.append(u"Checked players:")
         for player in data['checked']:
             rank = self.player_data[player]["rank"]
-            ret.append("%-8s%s%s" % (
-                display_name(player)[:8],
-                E[faction_name(rank)],
+            ret.append("%s: %s%s" % (
+                player,
+                E[faction_name(rank)[0]],
                 E[str(abs(rank))],
             ))
 
