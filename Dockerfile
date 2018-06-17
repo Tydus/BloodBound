@@ -8,6 +8,4 @@ RUN pip3 install -r /requirements.txt
 
 COPY *.py /
 
-COPY locale /locale
-
 CMD ["python3", "bot.py"]
