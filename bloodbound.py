@@ -7,19 +7,27 @@ import operator
 import random
 import ipdb
 
-# Hook User's repr and str to display cleanly
 import telegram
+# Hook User's repr and str to display cleanly
 def display_name(user):
     return user.username or user.full_name
 telegram.User.__repr__ = display_name
 telegram.User.__str__  = display_name
+
+# Hook CallbackQuery's answer() to handle(ignore) timeout
+telegram.CallbackQuery._real_answer = telegram.CallbackQuery.answer
+def __answer(self, *args, **kwargs):
+    try:
+        return self._real_answer(*args, **kwargs)
+    except telegram.error.BadRequest as e:
+        print("callback_query.answer(): %s")
+telegram.CallbackQuery.answer = __answer
 
 from telegram import InlineKeyboardButton, ParseMode
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
 
 from interactivehandler import InteractiveHandler, ConversationCancelled
 from gamebot import single_choice, _make_choice_keyboard
-import gamebot
 
 E={
    "empty": u"⚫️",
