@@ -913,9 +913,9 @@ def help(bot, update):
     update.message.reply_text("Use /start_game to test this bot.")
 
 def main():
-    svr = Updater(os.environ['BOT_TOKEN'])
+    updater = Updater(os.environ['BOT_TOKEN'])
 
-    svr.dispatcher.add_handler(InteractiveHandler(
+    updater.dispatcher.add_handler(InteractiveHandler(
         start_game,
         entry_points = [
             CommandHandler('start_game', None),
@@ -929,13 +929,30 @@ def main():
         per_message=False,
     ))
 
-    svr.dispatcher.add_handler(CommandHandler('help', help))
+    updater.dispatcher.add_handler(CommandHandler('help', help))
 
-    svr.start_polling(
-        clean=True,
-        timeout=300,
-    )
-    svr.idle()
+    webhook_port = os.environ.get('WEBHOOK_PORT')
+    if webhook_port:
+        updater.start_webhook(
+            listen=os.environ.get('WEBHOOK_LISTEN', '0.0.0.0'),
+            port=int(webhook_port),
+            url_path='api/' + os.environ['BOT_TOKEN'],
+        )
+
+        cert = os.environ.get('WEBHOOK_CERT')
+        if cert:
+            cert = open(cert, "rb")
+
+        updater.bot.set_webhook(
+            url=os.environ['URL_PREFIX'] + 'api/' + os.environ['BOT_TOKEN'],
+            certificate=cert,
+        )
+    else:
+        updater.start_polling(clean=True, timeout=10)
+
+    print("Blood Bound Bot ready for serving!")
+
+    updater.idle()
 
 if __name__ == '__main__':
     main()
