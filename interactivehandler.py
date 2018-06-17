@@ -97,7 +97,6 @@ class InteractiveHandler(Handler):
         return False
 
     def handle_update(self, update, dispatcher):
-        #import ipdb; ipdb.set_trace()
         context = self.conversations[self._get_key(update)]
 
         if not context['coroutine']:
@@ -108,7 +107,6 @@ class InteractiveHandler(Handler):
             try:
                 context['lock'].acquire()
                 yielded = next(context['coroutine'])
-                print(yielded)
             except StopIteration:
                 del self.conversations[self._get_key(update)]
                 return 
