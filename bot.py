@@ -100,8 +100,8 @@ token_list = [
 # x or xy
 # x: display token color
 # y: real token color (if not eq display color)
-# e.g.: 1 with a 'staff' can select a 'wr' token,
-# which means a red token displayed in white.
+# e.g.: inquisitor can select a 'wa' token,
+# which means a 'any' token displayed in white.
 #
 # y is decided while the token is spelt out,
 # and should be removed while drawing back.
@@ -396,13 +396,6 @@ class BloodBoundGame:
                 # white faction
                 if 'a' in data['token_available'] and selected_token != 's':
                     selected_token += 'a'
-                    break
-
-                # Skill 8
-                if 'staff' in data['item'] and selected_token == 'w':
-                    color = faction_name(data['rank'])[0]
-                    if color in data['token_available']:
-                        selected_token = 'w' + color
                     break
 
                 update.callback_query.answer(
@@ -708,6 +701,12 @@ class BloodBoundGame:
         if 'staff' not in pdata['item']:
             pdata['item'].append('staff')
 
+            # Permanently convert available color tokens to 'white'
+            pdata['token_available'] = list(map(
+                lambda x: 's' if x == 's' else 'w', pdata['token_available'],
+            ))
+
+
         candidate = [x
             for x in self.players
             if x != player
@@ -725,7 +724,14 @@ class BloodBoundGame:
         )
 
         target = candidate[selection]
-        self.player_data[target]['item'].append('staff')
+        data = self.player_data[target]
+        data['item'].append('staff')
+
+        # Permanently convert available color tokens to 'white'
+        data['token_available'] = list(map(
+            lambda x: 's' if x == 's' else 'w', data['token_available'],
+        ))
+
         self.log.append(_("%s gave a staff to %s") % (player, target))
 
     def skill9(self):
