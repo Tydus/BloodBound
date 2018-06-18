@@ -21,7 +21,7 @@ def __answer(self, *args, **kwargs):
     try:
         return self._real_answer(*args, **kwargs)
     except telegram.error.BadRequest as e:
-        print(_("callback_query.answer(): %s"))
+        print("callback_query.answer(): %s")
 telegram.CallbackQuery.answer = __answer
 
 from telegram import InlineKeyboardButton, ParseMode
