@@ -157,12 +157,12 @@ class BloodBoundGame:
 
         self.display_game_message(_("%s wins!") % winner)
 
-    def wait_for_players(self, update):
+    def wait_for_players(self, original_update):
         self.log = [_("Looking for players")]
 
         id = uuid.uuid4()
         reply_markup=_make_choice_keyboard(id, [_("Enter / Start")])
-        self.m = update.message.reply_text(
+        self.m = original_update.message.reply_text(
             self.log[0],
             parse_mode=ParseMode.HTML,
             reply_markup=reply_markup,
@@ -171,23 +171,23 @@ class BloodBoundGame:
         while True:
             # Workaround: don't use 'update' here to avoid pollution to
             # the argument. '_' is worked by checking argument's name.
-            new_update = yield [CallbackQueryHandler(
+            update = yield [CallbackQueryHandler(
                 None, pattern=r'^' + str(id) + r'#-?[0-9]+$',
             )]
-            player = new_update.effective_user
+            player = update.effective_user
             if player in self.players:
-                new_update.callback_query.answer(
+                update.callback_query.answer(
                     _("You are already in this game."), True,
                 )
                 continue
 
             if len(self.players) == 11 and player != self.creator:
-                new_update.callback_query.answer(_("Game full."), True)
+                update.callback_query.answer(_("Game full."), True)
                 continue
 
             if player == self.creator:
                 if len(self.players) < 1:
-                    new_update.callback_query.answer(
+                    update.callback_query.answer(
                         _("Not enough players."), True,
                     )
                     continue
@@ -462,7 +462,7 @@ class BloodBoundGame:
             if selection == 0: # interfere
                 guardians.append(update.effective_user)
 
-            self.log.append("%s chooses %s" % (
+            self.log.append(_("%s choosed %s") % (
                 update.effective_user,
                 [_("Interfere"), _("Pass")][selection],
             ))
