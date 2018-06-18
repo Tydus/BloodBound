@@ -184,7 +184,7 @@ class BloodBoundGame:
                 continue
 
             if player == self.creator:
-                if len(self.players) < 5:
+                if len(self.players) < 1:
                     update.callback_query.answer("Not enough players.", True)
                     continue
 
@@ -407,7 +407,7 @@ class BloodBoundGame:
 
         # convert skill token to display token
         if selected_token == 's':
-            selected_token = "%ds" % abs(data['rank']) % 10
+            selected_token = str(abs(data['rank']) % 10) + 's'
 
         data['token_available'].remove(selected_token[-1])
         data['token_used'].append(selected_token)
@@ -802,7 +802,7 @@ class BloodBoundGame:
         l.append("")
 
         for player, data in self.player_data.items():
-            ret = "%-8s" % str(player)[:8]
+            ret = "%-12s" % str(player)[:12]
             for t in data["token_used"]:
                 ret += E[t[0]]
 
