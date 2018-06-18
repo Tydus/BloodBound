@@ -32,8 +32,6 @@ from gamebot import single_choice, _make_choice_keyboard
 
 E={
    "empty": u"⚫️",
-   'ok': u'⭕️',
-   'tick': u'✔️',
    'info': u'ℹ️',
    "r": u"🔴",
    "b": u"🔵",
@@ -49,11 +47,9 @@ E={
    "8": u"8️⃣",
    "9": u"9️⃣",
    "0": u"*️⃣",
-   "attack": u"🗡",
-   "give": u"↪️",
    "s": u"#️⃣",
-   "quill": u"quill",      # Skill 1
-   "shield0": u"🖤",        # Skill 6
+   "quill": u"✒️",      # Skill 1
+   "shield0": u"🖤",    # Skill 6
    "shield1": u"💛",
    "shield2": u"💙",
    "shield3": u"💜",
@@ -61,11 +57,11 @@ E={
    "sword1": u"💛",
    "sword2": u"💙",
    "sword3": u"💜",
-   "staff": u"staff",      # Skill 8
-   "fan": u"fan",          # Skill 9
-   "real_curse": u"curse", # Skill 10
-   "fake_curse": u"curse", # Skill 10
-   "reserved": u"🖌🗡🛡🔱🔰🔮💢♨️㊙️"
+   "staff": u"⚕️",      # Skill 8
+   "fan": u"fan",       # Skill 9
+   "real_curse": u"💢", # Skill 10
+   "fake_curse": u"💢", # Skill 10
+   "reserved": u"🖌🗡🛡🔪🔰🔮💢♨️"
 }
 
 rank_name = [
