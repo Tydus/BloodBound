@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import sys
 import uuid
 import random
 import inspect
@@ -125,9 +126,13 @@ class Translator:
         user = update.effective_user
 
         print("@%s's language: %s" % (user.username, user.language_code))
-        lang = user.language_code[:2]
-        if lang == 'zh':
-            lang = 'zh-CN'
+        sys.stdout.flush()
+        try:
+            lang = user.language_code[:2]
+            if lang == 'zh':
+                lang = 'zh-CN'
+        except Exception:
+            lang = 'en'
         
         return self._t.get(lang, self._t['en']).gettext(s)
 
