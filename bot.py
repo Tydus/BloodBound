@@ -6,6 +6,7 @@ import uuid
 import operator
 import random
 import os
+import sys
 
 import telegram
 # Hook User's repr and str to display cleanly
@@ -801,7 +802,7 @@ class BloodBoundGame:
         l.append('')
 
         for player, data in self.player_data.items():
-            ret = '%-8s' % str(player)[:8]
+            ret = '%-12s' % str(player)[:12]
             for t in data['token_used']:
                 ret += E[t[0]]
 
@@ -933,26 +934,31 @@ def main():
 
     webhook_port = os.environ.get('WEBHOOK_PORT')
     if webhook_port:
+        sys.stdout.flush()
+
+        webhook_url=os.environ.get('URL_PREFIX', 'https://%s:%s/' % (
+            os.environ['WEBHOOK_FQDN'], webhook_port,
+        )) + 'api/' + os.environ['BOT_TOKEN']
+
         updater.start_webhook(
             listen=os.environ.get('WEBHOOK_LISTEN', '0.0.0.0'),
             port=int(webhook_port),
             url_path='api/' + os.environ['BOT_TOKEN'],
-            key=os.environ.get['WEBHOOK_KEY'],
-            cert=os.environ.get['WEBHOOK_CERT'],
+            key=os.environ.get('WEBHOOK_KEY'),
+            cert=os.environ.get('WEBHOOK_CERT'),
+            webhook_url=webhook_url,
+            clean=True,
         )
 
-        cert = os.environ.get('WEBHOOK_CERT')
-        if cert:
-            cert = open(cert, 'rb')
+        info = updater.bot.get_webhook_info()
+        print('Webhook info:')
+        import pprint; pprint.pprint(str(info))
 
-        updater.bot.set_webhook(
-            url=os.environ['URL_PREFIX'] + 'api/' + os.environ['BOT_TOKEN'],
-            certificate=cert,
-        )
     else:
         updater.start_polling(clean=True, timeout=10)
 
-    print("Blood Bound Bot ready for serving!")
+    print('Blood Bound Bot ready for serving!')
+    sys.stdout.flush()
 
     updater.idle()
 
