@@ -5,7 +5,7 @@ import logging
 import uuid
 import random
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, Update
 from telegram.ext import CallbackQueryHandler
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -78,3 +78,53 @@ def single_choice(
             continue
 
         return update, choice - 1 # choice count from 1
+
+class Translator:
+    def __init__(self):
+        self._t = {}
+        for i in ['en', 'zh-CN']:
+            self._t[i] = gettext.translation(
+                'bot', localedir='locale', languages=[i],
+            )
+        self._t['ja'] = gettext.translation('bot', localedir='locale', languages=['zh-CN'])
+
+        globals()['_'] = self.getText
+
+    # Try to find the `Update` instance within 5 frames
+    # Should only be used by _ internally
+    def tryFindUpdate(self):
+        topframe = inspect.currentframe()
+        frame = topframe.f_back
+        try:
+            for i in range(5):
+                frame = frame.f_back
+                #dict = frame.f_locals
+                dict = inspect.getargvalues(frame)[3]
+                for i in dict.values():
+                    if type(i) == Update:
+                        return i
+        except Exception as e:
+            return None
+        finally:
+            del topframe
+
+    # Try to find user's language and translate to that language
+    def getText(self, s, override='zh-CN'):
+        if override:
+            return self._t.get(override, self._t['en']).gettext(s)
+
+        update = self.tryFindUpdate()
+        if not update:
+            print("Cannot find Update")
+            return self._t['en'].gettext(s)
+
+        user = update.effective_user
+
+        print("@%s's language: %s" % (user.username, user.language_code))
+        lang = entity.from_user.language_code[:2]
+        if lang == 'zh':
+            lang = 'zh-CN'
+        
+        return self._t.get(lang, self._t['en']).gettext(s)
+
+Translator()
