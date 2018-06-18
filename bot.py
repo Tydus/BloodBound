@@ -937,6 +937,8 @@ def main():
             listen=os.environ.get('WEBHOOK_LISTEN', '0.0.0.0'),
             port=int(webhook_port),
             url_path='api/' + os.environ['BOT_TOKEN'],
+            key=os.environ.get['WEBHOOK_KEY'],
+            cert=os.environ.get['WEBHOOK_CERT'],
         )
 
         cert = os.environ.get('WEBHOOK_CERT')
