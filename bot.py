@@ -5,6 +5,8 @@ import logging
 import uuid
 import operator
 import random
+import inspect
+import functools
 import os
 
 import telegram
@@ -909,8 +911,106 @@ def info_button(bot, update):
 
     return query.answer(u"\n".join(ret), True)
 
-def help(bot, update):
-    update.message.reply_text("Use /start_game to test this bot.")
+class HelpMenu:
+    def index(self):
+        text = "Generic"
+        links = [
+            [('help_bg', 'background', self.background)],
+            [('help_factions', 'factions', self.factions)],
+            [('help_flow', 'game flow', self.game_flow)],
+            [('help_victory', 'victory condition', self.victory_condition)],
+            [('help_inquisitor', 'inquisitor mode', self.inquisitor_mode)],
+            [('help_char', 'characters and skills', self.characters_and_skills)],
+        ]
+        return text, links
+
+    def background(self):
+        text = "Background"
+        links = [[('help_index', 'Return', self.index)]]
+        return text, links
+
+    def factions(self):
+        text = "Factions"
+        links = [[('help_index', 'Return', self.index)]]
+        return text, links
+
+    def game_flow(self):
+        text = "Game flow"
+        links = [[('help_index', 'Return', self.index)]]
+        return text, links
+
+    def victory_condition(self):
+        text = "Victory condition"
+        links = [[('help_index', 'Return', self.index)]]
+        return text, links
+
+    def inquisitor_mode(self):
+        text = "Inquisitor mode"
+        links = [[('help_index', 'Return', self.index)]]
+        return text, links
+
+    def characters_and_skills(self, rank=0):
+        text = [
+            "Characters and skills",
+            'Help_skill1', 'Help_skill2', 'Help_skill3', 'Help_skill4',
+            'Help_skill5', 'Help_skill6', 'Help_skill7', 'Help_skill8',
+            'Help_skill9', 'Help_skill10',
+        ][rank]
+
+        links = [(
+                'help_skill%d', rank_name[i],
+                functools.partial(self.characters_and_skills, i),
+            )
+            for i in range(1, 11)
+        ]
+        links.append(('help_index', 'Return', self.index))
+        links = [ret[i : i + 2] for i in range(0, len(buttons), 2)]
+
+        return text, links
+
+    def main(self, bot, update):
+        self.id = uuid4()
+        self.bot = bot
+        self.m = None
+        page = self.index
+        
+        if chat.type != "private":
+            update.message.reply_text(
+                "Please /help in the private chat to avoid spamming."
+            )
+            return
+
+        while True:
+            if inspect.isgeneratorfunction(page):
+                content, buttons = yield from page()
+            else:
+                content, buttons = page()
+
+            if not self.m:
+                func = update.message.reply_text
+            else:
+                func = self.m.edit_text
+
+            self.m = func(
+                text=content,
+                parse_mode=ParseMode.HTML,
+                reply_markup=make_reply_markup(buttons),
+            )
+
+            update = yield [CallbackQueryHandler(
+                None, pattern=r"^" + str(id) + r"#.+$",
+            )]
+            query = updata.callback_query
+            query_cmd = query.data.split('#')[1]
+
+            for cmd, _, func in buttons:
+                if cmd == query_cmd:
+                    page = func
+                    break
+
+            query.answer()
+
+help_menu = HelpMenu()
 
 def main():
     updater = Updater(os.environ['BOT_TOKEN'])
@@ -929,7 +1029,17 @@ def main():
         per_message=False,
     ))
 
-    updater.dispatcher.add_handler(CommandHandler('help', help))
+    updater.dispatcher.add_handler(InteractiveHandler(
+        help_menu.main,
+        entry_points = [
+            CommandHandler('help', None),
+            CommandHandler('start', None),
+        ]
+        fallbacks = [],
+        per_chat=True,
+        per_user=True,
+        per_message=False,
+    ))
 
     webhook_port = os.environ.get('WEBHOOK_PORT')
     if webhook_port:
