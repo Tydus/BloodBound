@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import logging
 import uuid
@@ -28,6 +27,7 @@ from telegram import InlineKeyboardButton, ParseMode
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
 
 from interactivehandler import InteractiveHandler, ConversationCancelled
+
 from gamebot import single_choice, _make_choice_keyboard
 
 E={
@@ -70,16 +70,16 @@ E={
 
 rank_name = [
     None,
-    _("Elder"),
-    _("Assassin"),
-    _("Harlequin"),
-    _("Alchemist"),
-    _("Mentalist"),
-    _("Guardian"),
-    _("Berserker"),
-    _("Mage"),
-    _("Courtesan"),
-    _("Inquisitor"),
+    "Elder",
+    "Assassin",
+    "Harlequin",
+    "Alchemist",
+    "Mentalist",
+    "Guardian",
+    "Berserker",
+    "Mage",
+    "Courtesan",
+    "Inquisitor",
 ]
 
 token_list = [
@@ -169,23 +169,27 @@ class BloodBoundGame:
         )
 
         while True:
-            update = yield [CallbackQueryHandler(
+            # Workaround: don't use 'update' here to avoid pollution to
+            # the argument. '_' is worked by checking argument's name.
+            new_update = yield [CallbackQueryHandler(
                 None, pattern=r'^' + str(id) + r'#-?[0-9]+$',
             )]
-            player = update.effective_user
+            player = new_update.effective_user
             if player in self.players:
-                update.callback_query.answer(
+                new_update.callback_query.answer(
                     _("You are already in this game."), True,
                 )
                 continue
 
             if len(self.players) == 11 and player != self.creator:
-                update.callback_query.answer(_("Game full."), True)
+                new_update.callback_query.answer(_("Game full."), True)
                 continue
 
             if player == self.creator:
-                if len(self.players) < 5:
-                    update.callback_query.answer(_("Not enough players."), True)
+                if len(self.players) < 1:
+                    new_update.callback_query.answer(
+                        _("Not enough players."), True,
+                    )
                     continue
 
                 self.players.append(player)
@@ -195,7 +199,7 @@ class BloodBoundGame:
                     text='\n'.join(self.log),
                     reply_markup=None,
                 )
-                update.callback_query.answer()
+                new_update.callback_query.answer()
                 break
             else:
                 self.players.append(player)
@@ -204,7 +208,7 @@ class BloodBoundGame:
                     text='\n'.join(self.log),
                     reply_markup=reply_markup,
                 )
-                update.callback_query.answer()
+                new_update.callback_query.answer()
 
     def shuffle_rank(self):
         ret = []
@@ -286,7 +290,7 @@ class BloodBoundGame:
             self.log.append(_("Inquisitor %s cannot attack") % self.knife)
             is_give = 1
         else:
-            _, selection = yield from single_choice(
+            __, selection = yield from single_choice(
                 original_message=self.m,
                 candidate=[_("Attack"), _("Pass")],
                 whitelist=[self.knife],
@@ -296,7 +300,7 @@ class BloodBoundGame:
             is_give = (selection == 1)
 
         candidate = [x for x in self.players if x != self.knife]
-        _, selection = yield from single_choice(
+        __, selection = yield from single_choice(
             original_message=self.m,
             candidate=candidate,
             whitelist=[self.knife],
@@ -469,7 +473,7 @@ class BloodBoundGame:
         if len(guardians) == 0:
             return
 
-        _, selection = yield from single_choice(
+        __, selection = yield from single_choice(
             original_message=self.m,
             candidate=guardians + [_("None")],
             whitelist=[self.victim],
@@ -516,7 +520,7 @@ class BloodBoundGame:
 
         candidate = [x for x in self.players if x != player]
 
-        _, selection = yield from single_choice(
+        __, selection = yield from single_choice(
             original_message=self.m,
             candidate=candidate,
             whitelist=[player],
@@ -548,7 +552,7 @@ class BloodBoundGame:
                 self.log.append(_("No enough player to be checked."))
                 break
 
-            _, selection = yield from single_choice(
+            __, selection = yield from single_choice(
                 original_message=self.m,
                 candidate=candidate,
                 whitelist=[player],
@@ -576,7 +580,7 @@ class BloodBoundGame:
                 self.saved_victim, self.victim, self.saved_victim,
             ))
         else:
-            _, selection = yield from single_choice(
+            __, selection = yield from single_choice(
                 original_message=self.m,
                 candidate=[_("Kill"), _("Heal")],
                 whitelist=[player],
@@ -598,7 +602,7 @@ class BloodBoundGame:
             if len(candidate) == 1:
                 selected_token = candidate[0]
             else:
-                _, selection = yield from single_choice(
+                __, selection = yield from single_choice(
                     original_message=self.m,
                     candidate=[E[i[0]] for i in candidate],
                     whitelist=[self.saved_victim],
@@ -620,7 +624,7 @@ class BloodBoundGame:
 
         candidate = [x for x in self.players if x != player]
 
-        _, selection = yield from single_choice(
+        __, selection = yield from single_choice(
             original_message=self.m,
             candidate=candidate,
             whitelist=[player],
@@ -642,7 +646,7 @@ class BloodBoundGame:
 
         candidate = [x for x in self.players if x != player]
 
-        _, selection = yield from single_choice(
+        __, selection = yield from single_choice(
             original_message=self.m,
             candidate=candidate,
             whitelist=[player],
@@ -710,7 +714,7 @@ class BloodBoundGame:
             and 'staff' not in self.player_data[x]['item']
         ]
 
-        _, selection = yield from single_choice(
+        __, selection = yield from single_choice(
             original_message=self.m,
             candidate=candidate,
             whitelist=[player],
@@ -733,7 +737,7 @@ class BloodBoundGame:
             and 'fan' not in self.player_data[x]['item']
         ]
 
-        _, selection = yield from single_choice(
+        __, selection = yield from single_choice(
             original_message=self.m,
             candidate=candidate,
             whitelist=[player],
@@ -761,7 +765,7 @@ class BloodBoundGame:
             #and 'fake_curse' not in self.player_data[x]['item']
         ]
 
-        _, selection = yield from single_choice(
+        __, selection = yield from single_choice(
             original_message=self.m,
             candidate=candidate,
             whitelist=[player],
@@ -774,7 +778,7 @@ class BloodBoundGame:
 
         random.shuffle(self.available_curse)
 
-        _, selection = yield from single_choice(
+        __, selection = yield from single_choice(
             original_message=self.m,
             candidate=list(map(E.get, self.available_curse)),
             whitelist=[target],
@@ -878,7 +882,7 @@ def info_button(bot, update):
     ret = []
     ret.append(_(u"Player %s") % display_name(user))
     ret.append(_(u"Faction: %s") % E[faction_name(data['rank'])[0]])
-    ret.append(_(u"Rank: %d(%s)") % (abs(data['rank']), rank_name[abs(data['rank'])]))
+    ret.append(_(u"Rank: %d(%s)") % (abs(data['rank']), _(rank_name[abs(data['rank'])])))
 
     icons = ''
     for t in data['token_available']:
@@ -902,7 +906,7 @@ def info_button(bot, update):
         ret.append(_(u"Checked players:"))
         for player in data['checked']:
             rank = self.player_data[player]['rank']
-            ret.append("%s: %s%s" % (
+            ret.append('%s: %s%s' % (
                 player,
                 E[faction_name(rank)[0]],
                 E[str(abs(rank))],

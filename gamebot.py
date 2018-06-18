@@ -4,6 +4,8 @@
 import logging
 import uuid
 import random
+import inspect
+import gettext
 
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, Update
 from telegram.ext import CallbackQueryHandler
@@ -88,7 +90,8 @@ class Translator:
             )
         self._t['ja'] = gettext.translation('bot', localedir='locale', languages=['zh-CN'])
 
-        globals()['_'] = self.getText
+        import builtins
+        builtins.__dict__['_'] = self.getText
 
     # Try to find the `Update` instance within 5 frames
     # Should only be used by _ internally
@@ -109,7 +112,8 @@ class Translator:
             del topframe
 
     # Try to find user's language and translate to that language
-    def getText(self, s, override='zh-CN'):
+    #def getText(self, s, override='zh-CN'):
+    def getText(self, s, override=None):
         if override:
             return self._t.get(override, self._t['en']).gettext(s)
 
@@ -121,7 +125,7 @@ class Translator:
         user = update.effective_user
 
         print("@%s's language: %s" % (user.username, user.language_code))
-        lang = entity.from_user.language_code[:2]
+        lang = user.language_code[:2]
         if lang == 'zh':
             lang = 'zh-CN'
         
