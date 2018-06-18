@@ -20,7 +20,7 @@ def __answer(self, *args, **kwargs):
     try:
         return self._real_answer(*args, **kwargs)
     except telegram.error.BadRequest as e:
-        print("callback_query.answer(): %s")
+        print(_("callback_query.answer(): %s"))
 telegram.CallbackQuery.answer = __answer
 
 from telegram import InlineKeyboardButton, ParseMode
@@ -188,7 +188,7 @@ class BloodBoundGame:
                     continue
 
                 self.players.append(player)
-                self.log.append("%s joined" % player)
+                self.log.append(_("%s joined") % player)
                 self.log.append(_("Game commencing."))
                 self.m.edit_text(
                     text="\n".join(self.log),
@@ -274,7 +274,7 @@ class BloodBoundGame:
 
     def get_action(self):
         self.m = self.m.reply_text(
-            text=self.generate_game_message("%s action" % self.knife),
+            text=self.generate_game_message(_("%s action") % self.knife),
             parse_mode=ParseMode.HTML,
         )
 
