@@ -103,10 +103,10 @@ class Translator:
             for i in range(5):
                 frame = frame.f_back
                 #dict = frame.f_locals
-                dict = inspect.getargvalues(frame)[3]
-                for i in dict.values():
-                    if type(i) == Update:
-                        return i
+                args, __, __, locals = inspect.getargvalues(frame)
+                for i in args: # Only check args variables
+                    if type(locals[i]) == Update:
+                        return locals[i]
         except Exception as e:
             return None
         finally:

@@ -158,6 +158,8 @@ class BloodBoundGame:
         self.display_game_message(_("%s wins!") % winner)
 
     def wait_for_players(self, original_update):
+        # Workaround: don't use 'update' here to avoid pollution to
+        # the argument. '_' is worked by checking argument's name.
         self.log = [_("Looking for players")]
 
         id = uuid.uuid4()
@@ -169,8 +171,6 @@ class BloodBoundGame:
         )
 
         while True:
-            # Workaround: don't use 'update' here to avoid pollution to
-            # the argument. '_' is worked by checking argument's name.
             update = yield [CallbackQueryHandler(
                 None, pattern=r'^' + str(id) + r'#-?[0-9]+$',
             )]
@@ -199,7 +199,7 @@ class BloodBoundGame:
                     text='\n'.join(self.log),
                     reply_markup=None,
                 )
-                new_update.callback_query.answer()
+                update.callback_query.answer()
                 break
             else:
                 self.players.append(player)
@@ -208,7 +208,7 @@ class BloodBoundGame:
                     text='\n'.join(self.log),
                     reply_markup=reply_markup,
                 )
-                new_update.callback_query.answer()
+                update.callback_query.answer()
 
     def shuffle_rank(self):
         ret = []
