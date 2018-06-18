@@ -4,10 +4,8 @@ RUN apt-get -y update && apt-get -y install easy-rsa && rm -rf /var/lib/apt/list
 
 WORKDIR /
 
-COPY requirements.txt /
+COPY *.py start.sh requirements.txt /
 
 RUN pip3 install -r /requirements.txt
-
-COPY *.py start.sh /
 
 CMD ["start.sh", "python3", "bot.py"]
