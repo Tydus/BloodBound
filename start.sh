@@ -1,7 +1,7 @@
 #!/bin/bash
 
-if [ ! "$FQDN" ]; then
-    echo 'Warning: $FQDN not present, webhook may not be available.'
+if [ ! "$WEBHOOK_FQDN" ]; then
+    echo 'Warning: $WEBHOOK_FQDN not present, webhook may not be available.'
     $@
     exit $?
 fi
@@ -12,17 +12,13 @@ if [ "$WEBHOOK_CERT" ]; then
     exit $?
 fi
 
-EASY_RSA_DIR=/usr/share/easy-rsa
+export WEBHOOK_CERT=/$WEBHOOK_FQDN.crt
+export WEBHOOK_KEY=/$WEBHOOK_FQDN.key
 
-export WEBHOOK_CERT=$EASY_RSA_DIR/keys/$FQDN.crt
-export WEBHOOK_KEY=$EASY_RSA_DIR/keys/$FQDN.key
-
-if [ ! -f $CERT_FILE ]; then
-    echo "Certificate file $CERT_FILE is not present, so creating one for you!"
-    . vars
-    ./clean-all
-    ./build-ca --batch
-    ./build-key-server --batch $FQDN
+if [ ! -f $WEBHOOK_CERT ]; then
+    echo "Certificate file $WEBHOOK_CERT is not present, so creating one for you!"
+    openssl req -newkey rsa:2048 -sha256 -nodes -keyout "$WEBHOOK_KEY" -x509 -days 3650 \
+        -out "$WEBHOOK_CERT" -subj "/C=NA/ST=NA/L=NA/O=NA/OU=NA/CN=$WEBHOOK_FQDN"
 fi
 
 $@
