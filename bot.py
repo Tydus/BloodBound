@@ -89,16 +89,16 @@ rank_name = [
 
 quick_help = [
     None,
-    "Take a ✒️",
-    "Give a player 2 damages and pass him the knife",
-    "Inspect two character cards secretly",
-    "Force the interceptor to be damaged/healed once (only available when intercepted)",
-    "Give a player 1 damage (must be the number if possible) and pass him the knife"
-    "Give a 🛡/🔰 to a player and take 🗡/🔪",
-    "Give a damage to the player attacked you",
-    "Take a ⚕️ and give a ⚕️ to another player",
-    "Give a (Fan) to another player",
-    "Give a 📕📗📘📙 to a player",
+    _T("Take a ✒️"),
+    _T("Give a player 2 damages and pass him the knife"),
+    _T("Inspect two character cards secretly"),
+    _T("Force the interceptor to be damaged/healed once (only available when intercepted)"),
+    _T("Give a player 1 damage (must be the number if possible) and pass him the knife"),
+    _T("Give a 🛡/🔰 to a player and take 🗡/🔪"),
+    _T("Give a damage to the player attacked you"),
+    _T("Take a ⚕️ and give a ⚕️ to another player"),
+    _T("Give a (Fan) to another player"),
+    _T("Give a 📕📗📘📙 to a player"),
 ]
 
 token_list = [
