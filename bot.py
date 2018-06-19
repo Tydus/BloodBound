@@ -84,6 +84,20 @@ rank_name = [
     "Inquisitor",
 ]
 
+quick_help = [
+    None,
+    "Take a ✒️",
+    "Give a player 2 damages and pass him the knife",
+    "Inspect two character cards secretly",
+    "Force the interceptor to be damaged/healed once (only available when intercepted)",
+    "Give a player 1 damage (must be the number if possible) and pass him the knife"
+    "Give a 🛡/🔰 to a player and take 🗡/🔪",
+    "Give a damage to the player attacked you",
+    "Take a ⚕️ and give a ⚕️ to another player",
+    "Give a (Fan) to another player",
+    "Give a 📕📗📘📙 to a player",
+]
+
 token_list = [
     None,
     ['c', 'c', 's'],
