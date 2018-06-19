@@ -928,10 +928,11 @@ def info_button(bot, update):
             True,
         )
 
+    rank = abs(data['rank'])
     ret = []
     ret.append(_(u"Player %s") % display_name(user))
     ret.append(_(u"Clan: %s") % E[faction_name(data['rank'])[0]])
-    ret.append(_(u"Rank: %d(%s)") % (abs(data['rank']), _(rank_name[abs(data['rank'])])))
+    ret.append(_(u"Rank: %d(%s)") % (rank, _(rank_name[rank])))
 
     icons = ''
     for t in data['token_available']:
@@ -941,6 +942,8 @@ def info_button(bot, update):
             icons += E[t]
 
     ret.append(_(u"Available token: %s") % icons)
+
+    ret.append(_(u"Skill: %s") % _(quick_help[rank]))
 
     my_index = self.players.index(user)
     after_index = (my_index + 1) % len(self.players)
