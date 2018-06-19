@@ -3,322 +3,391 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.1\n"
-"POT-Creation-Date: 2018-06-18 19:31+DST\n"
+"POT-Creation-Date: 2018-06-19 15:57+DST\n"
+"PO-Revision-Date: \n"
+"Last-Translator: 漠伦(Mo Lun) <i@molun.net>\n"
+"Language-Team: \n"
+"Language: zh_CN\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"PO-Revision-Date: \n"
-"Language-Team: \n"
 "X-Generator: Poedit 2.0.8\n"
-"Last-Translator: 漠伦(Mo Lun) <i@molun.net>\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
-"Language: zh_CN\n"
 
-#: bot.py:73
+#: bot.py:78
 msgid "Elder"
 msgstr "长老"
 
-#: bot.py:74
+#: bot.py:79
 msgid "Assassin"
 msgstr "刺客"
 
-#: bot.py:75
+#: bot.py:80
 msgid "Harlequin"
 msgstr "小丑"
 
-#: bot.py:76
+#: bot.py:81
 msgid "Alchemist"
 msgstr "炼金术师"
 
-#: bot.py:77
+#: bot.py:82
 msgid "Mentalist"
 msgstr "心灵感应师"
 
-#: bot.py:78
+#: bot.py:83
 msgid "Guardian"
 msgstr "守卫"
 
-#: bot.py:79
+#: bot.py:84
 msgid "Berserker"
 msgstr "狂战士"
 
-#: bot.py:80
+#: bot.py:85
 msgid "Mage"
 msgstr "魔术师"
 
-#: bot.py:81
+#: bot.py:86
 msgid "Courtesan"
 msgstr "花魁"
 
-#: bot.py:82
+#: bot.py:87
 msgid "Inquisitor"
 msgstr "判官"
 
-#: bot.py:140 bot.py:155
+#: bot.py:92
+msgid "Take a ✒️"
+msgstr "Take a ✒️"
+
+#: bot.py:93
+msgid "Give a player 2 damages and pass him the knife"
+msgstr "Give a player 2 damages and pass him the knife"
+
+#: bot.py:94
+msgid "Inspect two character cards secretly"
+msgstr "Inspect two character cards secretly"
+
+#: bot.py:95
+msgid ""
+"Force the interceptor to be damaged/healed once (only available when "
+"intercepted)"
+msgstr ""
+"Force the interceptor to be damaged/healed once (only available when "
+"intercepted)"
+
+#: bot.py:96
+msgid ""
+"Give a player 1 damage (must be the number if possible) and pass him the "
+"knife"
+msgstr ""
+"Give a player 1 damage (must be the number if possible) and pass him the "
+"knife"
+
+#: bot.py:97
+msgid "Give a 🛡/🔰 to a player and take 🗡/🔪"
+msgstr "Give a 🛡/🔰 to a player and take 🗡/🔪"
+
+#: bot.py:98
+msgid "Give a damage to the player attacked you"
+msgstr "Give a damage to the player attacked you"
+
+#: bot.py:99
+msgid "Take a ⚕️ and give a ⚕️ to another player"
+msgstr "Take a ⚕️ and give a ⚕️ to another player"
+
+#: bot.py:100
+#| msgid "%s give the fan to a player:"
+msgid "Give a (Fan) to another player"
+msgstr "Give a (Fan) to another player"
+
+#: bot.py:101
+msgid "Give a 📕📗📘📙 to a player"
+msgstr "Give a 📕📗📘📙 to a player"
+
+#: bot.py:130
+msgid "white"
+msgstr "白色"
+
+#: bot.py:131
+msgid "red"
+msgstr "红色"
+
+#: bot.py:132
+msgid "blue"
+msgstr "蓝色"
+
+#: bot.py:160 bot.py:180
 msgid "Inquisitor wins!"
 msgstr "判官获胜！"
 
-#: bot.py:158
+#: bot.py:183
 msgid "%s wins!"
 msgstr "%s 获胜！"
 
-#: bot.py:161
+#: bot.py:188
 msgid "Looking for players"
 msgstr "正在等待玩家加入"
 
-#: bot.py:164
+#: bot.py:191
 msgid "Enter / Start"
 msgstr "加入 / 开始"
 
-#: bot.py:178
+#: bot.py:205
 msgid "You are already in this game."
 msgstr "你已加入游戏。"
 
-#: bot.py:183
+#: bot.py:210
 msgid "Game full."
 msgstr "游戏人数已满。"
 
-#: bot.py:188
+#: bot.py:216
 msgid "Not enough players."
 msgstr "玩家人数不足。"
 
-#: bot.py:192 bot.py:202
+#: bot.py:221 bot.py:231
 msgid "%s joined"
 msgstr "%s 加入游戏"
 
-#: bot.py:193
+#: bot.py:222
 msgid "Game commencing."
 msgstr "游戏开始。"
 
-#: bot.py:278
+#: bot.py:311
 msgid "%s action"
 msgstr "%s 行动"
 
-#: bot.py:286
+#: bot.py:319
 msgid "Inquisitor %s cannot attack"
 msgstr "判官 %s 无法刺杀"
 
-#: bot.py:291
+#: bot.py:324
 msgid "Attack"
 msgstr "刺杀"
 
-#: bot.py:291 bot.py:446 bot.py:463
+#: bot.py:324 bot.py:472 bot.py:489
 msgid "Pass"
 msgstr "跳过"
 
-#: bot.py:293
+#: bot.py:326
 msgid "%s select action"
 msgstr "%s 进行选择"
 
-#: bot.py:303
+#: bot.py:336
 msgid "%s select target"
 msgstr "%s 选择目标"
 
-#: bot.py:317
+#: bot.py:350
 msgid "%s gave the knife to %s."
 msgstr "%s 将匕首递给 %s。"
 
-#: bot.py:323
+#: bot.py:356
 msgid "%s is attacking %s"
 msgstr "%s 刺杀 %s"
 
-#: bot.py:346
+#: bot.py:379
 msgid "%s selected %s token"
 msgstr "%s 选择 %s 标记"
 
-#: bot.py:381
+#: bot.py:414
 msgid "%s select token:"
 msgstr "%s 选择标记："
 
-#: bot.py:405
+#: bot.py:431
 msgid "Selection invalid, please retry."
 msgstr "选择无效，请重试。"
 
-#: bot.py:446 bot.py:463
+#: bot.py:472 bot.py:489
 msgid "Interfere"
 msgstr "挡刀"
 
-#: bot.py:451
+#: bot.py:477
 msgid "everyone else select interfere or pass"
 msgstr "余下玩家选择是否介入"
 
-#: bot.py:474
+#: bot.py:487
+msgid "%s choosed %s"
+msgstr "%s 选择了 %s"
+
+#: bot.py:500
 msgid "None"
 msgstr "无"
 
-#: bot.py:477
+#: bot.py:503
 msgid "%s accept interfere?"
 msgstr "%s 是否接受挡刀？"
 
-#: bot.py:481
+#: bot.py:507
 msgid "%s rejected interference"
 msgstr "%s 拒绝挡刀"
 
-#: bot.py:483
+#: bot.py:509
 msgid "%s accepted %s's interference"
 msgstr "%s 接受 %s 的挡刀"
 
-#: bot.py:524 bot.py:628
+#: bot.py:550 bot.py:654
 msgid "%s a player to trigger skill:"
 msgstr "%s 发动技能："
 
-#: bot.py:529 bot.py:634 bot.py:693
+#: bot.py:555 bot.py:660 bot.py:734
 msgid "%s casted skill on %s"
 msgstr "%s 对 %s 发动技能"
 
-#: bot.py:533
+#: bot.py:559
 msgid "%s select %s token:"
 msgstr "%s 选择标记 %s："
 
-#: bot.py:540
+#: bot.py:566
 msgid "1st"
 msgstr "第一位"
 
-#: bot.py:540
+#: bot.py:566
 msgid "2nd"
 msgstr "第二位"
 
-#: bot.py:548
+#: bot.py:574
 msgid "No enough player to be checked."
 msgstr "应选择 2 位玩家窥探身份。"
 
-#: bot.py:556
+#: bot.py:582
 msgid "%s select %s player to check:"
 msgstr "%s 选择窥探 %s 玩家身份："
 
-#: bot.py:563
+#: bot.py:589
 msgid "%s checked %s"
 msgstr "%s 窥探了 %s"
 
-#: bot.py:575
+#: bot.py:601
 msgid "%s has no token shown, %s must kill %s"
 msgstr "%s 未打出标记，%s 必须刺杀 %s"
 
-#: bot.py:581
+#: bot.py:607
 msgid "Heal"
 msgstr "治愈"
 
-#: bot.py:581
+#: bot.py:607
 msgid "Kill"
 msgstr "刺杀"
 
-#: bot.py:584
+#: bot.py:610
 msgid "%s select kill or heal:"
 msgstr "%s 选择治愈或刺杀："
 
-#: bot.py:592
+#: bot.py:618
 msgid "%s killed %s"
 msgstr "%s 刺杀了 %s"
 
-#: bot.py:606
+#: bot.py:632
 msgid "%s select token for healing:"
 msgstr "%s 选择要收回的标记："
 
-#: bot.py:613
+#: bot.py:639
 msgid "%s healed %s"
 msgstr "%s 治愈了 %s"
 
-#: bot.py:650
+#: bot.py:672
+msgid "%s already has 3 tokens, not triggering skill"
+msgstr "%s 已经有3个标记，无法发动技能"
+
+#: bot.py:685
 msgid "%s give a shield to a player:"
 msgstr "%s 将【盾牌】赐予给："
 
-#: bot.py:660
+#: bot.py:697
 msgid "%s gave a shield to %s"
 msgstr "%s 将【盾牌】赐予 %s"
 
-#: bot.py:680
-msgid "%s's swords are invalidated"
-msgstr "%s 的剑被挡了下来"
+#: bot.py:719
+msgid "%s's shields are invalidated"
+msgstr "%s 的盾牌失效了"
 
-#: bot.py:685
-msgid "%s is protected by the shield"
-msgstr "%s 被盾牌所保护"
+#: bot.py:724
+msgid "%s is protected by %s's shield"
+msgstr "%s 被 %s 的盾牌所保护"
 
-#: bot.py:718
+#: bot.py:765
 msgid "%s give the staff to a player:"
 msgstr "%s 将【魔杖】赐予给："
 
-#: bot.py:725
+#: bot.py:779
 msgid "%s gave a staff to %s"
 msgstr "%s 将【魔杖】赐予给 %s"
 
-#: bot.py:741
+#: bot.py:795
 msgid "%s give the fan to a player:"
 msgstr "%s 将【扇子】赐予给："
 
-#: bot.py:748
+#: bot.py:802
 msgid "%s gave a fan to %s"
 msgstr "%s 将【扇子】赐予给 %s"
 
-#: bot.py:754
-msgid "%s have no curses left"
-msgstr "%s 已无诅咒牌"
+#: bot.py:808
+msgid "%s have no curse books left"
+msgstr "%s 已无诅咒书"
 
-#: bot.py:769
-msgid "%s give the curse to a player:"
-msgstr "%s 将【诅咒牌】交给玩家："
+#: bot.py:821
+msgid "%s give a curse book to a player:"
+msgstr "%s 将【诅咒书】交给玩家："
 
-#: bot.py:781
-msgid "%s select a curse:"
-msgstr "%s 选择了一张【诅咒牌】："
+#: bot.py:833
+msgid "%s select a curse book:"
+msgstr "%s 选择了一本【诅咒书】："
 
-#: bot.py:789
-msgid "%s gave a curse to %s"
-msgstr "%s 将【诅咒牌】交给 %s"
+#: bot.py:841
+msgid "%s gave a curse book to %s"
+msgstr "%s 将【诅咒书】交给 %s"
 
-#: bot.py:800
+#: bot.py:852
 msgid "<b>round %d</b>"
 msgstr "<b>第 %d 回合</b>"
 
-#: bot.py:825
+#: bot.py:878
 msgid "Game cancelled."
 msgstr "游戏已取消。"
 
-#: bot.py:828
+#: bot.py:881
 msgid "<b>Game cancelled.</b>"
 msgstr "<b>游戏已取消</b>"
 
-#: bot.py:836
+#: bot.py:889
 msgid "The game must be started in a group."
 msgstr "游戏必须在群组中发起。"
 
-#: bot.py:840
+#: bot.py:893
 msgid "Another game is in progress."
 msgstr "另一场游戏正在进行。"
 
-#: bot.py:859
+#: bot.py:912
 msgid "You are not the owner of the game."
 msgstr "你并非本场游戏的发起人。"
 
-#: bot.py:874
+#: bot.py:927
 msgid "You are not in this game, please wait for the next game."
 msgstr "你未加入本场游戏，请等待下一场游戏。"
 
-#: bot.py:879
+#: bot.py:932
 msgid "Player %s"
 msgstr "玩家 %s"
 
-#: bot.py:880
-msgid "Faction: %s"
-msgstr "阵营： %s"
+#: bot.py:933
+msgid "Clan: %s"
+msgstr "阵营：%s"
 
-#: bot.py:881
+#: bot.py:934
 msgid "Rank: %d(%s)"
-msgstr "身份： %d(%s)"
+msgstr "身份：%d(%s)"
 
-#: bot.py:890
+#: bot.py:943
 msgid "Available token: %s"
-msgstr "可用标记： %s"
+msgstr "可用标记：%s"
 
-#: bot.py:897
+#: bot.py:950
 msgid "Next player (%s) is %s"
-msgstr "下一位玩家（ %s）是 %s"
+msgstr "下一位玩家（%s）是 %s"
 
-#: bot.py:902
+#: bot.py:955
 msgid "Checked players:"
-msgstr "检查玩家："
+msgstr "查看的玩家："
 
-#: bot.py:914
+#: bot.py:967
 msgid "Use /start_game to test this bot."
 msgstr "使用 /start_game 命令来测试本 Bot。"
