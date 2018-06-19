@@ -87,6 +87,20 @@ rank_name = [
     _T("Inquisitor"),
 ]
 
+quick_help = [
+    None,
+    "Take a ✒️",
+    "Give a player 2 damages and pass him the knife",
+    "Inspect two character cards secretly",
+    "Force the interceptor to be damaged/healed once (only available when intercepted)",
+    "Give a player 1 damage (must be the number if possible) and pass him the knife"
+    "Give a 🛡/🔰 to a player and take 🗡/🔪",
+    "Give a damage to the player attacked you",
+    "Take a ⚕️ and give a ⚕️ to another player",
+    "Give a (Fan) to another player",
+    "Give a 📕📗📘📙 to a player",
+]
+
 token_list = [
     None,
     ['c', 'c', 's'],
@@ -828,7 +842,8 @@ class BloodBoundGame:
         l += self.log
         l.append('')
 
-        for player, data in self.player_data.items():
+        for player in self.players:
+            data = self.player_data[player]
             ret = '%-12s' % str(player)[:12]
             for t in data['token_used']:
                 ret += E[t[0]]
@@ -932,7 +947,7 @@ def info_button(bot, update):
             ret.append('%s: %s%s' % (
                 player,
                 E[faction_name(rank)[0]],
-                E[str(abs(rank))],
+                E[str(abs(rank) % 10)],
             ))
 
     return query.answer(u'\n'.join(ret), True)
