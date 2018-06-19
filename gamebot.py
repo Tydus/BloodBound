@@ -35,6 +35,7 @@ def single_choice(
     id=None,
     text=None,
     static_buttons=[],
+    new_message=False,
 ):
     id = str(id or uuid.uuid4())
 
@@ -54,7 +55,13 @@ def single_choice(
     )
 
     try:
-        if text and text != original_message.text:
+        if new_message and text:
+            message = original_message.reply_text(
+                text=text,
+                parse_mode=ParseMode.HTML,
+                reply_markup=reply_markup,
+            )
+        elif text and text != original_message.text:
             message = original_message.edit_text(
                 text=text,
                 parse_mode=ParseMode.HTML,

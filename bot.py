@@ -172,7 +172,7 @@ class BloodBoundGame:
                     self.display_game_message(_("Inquisitor wins!"))
                     return
 
-        self.display_game_message(_("%s wins!") % winner)
+        self.display_game_message(_("%s wins!") % _(winner))
 
     def wait_for_players(self, original_update):
         # Workaround: don't use 'update' here to avoid pollution to
@@ -298,34 +298,37 @@ class BloodBoundGame:
         self.knife = self.players[random.randint(0, len(self.players) - 1)]
 
     def get_action(self):
-        self.m = self.m.reply_text(
-            text=self.generate_game_message(_("%s action") % self.knife),
-            parse_mode=ParseMode.HTML,
-        )
-
         data = self.player_data[self.knife]
 
         if abs(data['rank']) == 10 and data['token_available'] == []:
             # Skill 10
             self.log.append(_("Inquisitor %s cannot attack") % self.knife)
             is_give = 1
+            new_message=True
         else:
             __, selection = yield from single_choice(
                 original_message=self.m,
                 candidate=[_("Attack"), _("Pass")],
                 whitelist=[self.knife],
-                text=self.generate_game_message(_("%s select action") % self.knife),
+                text=self.generate_game_message(
+                    _("%s select action") % self.knife.mention_html(),
+                ),
                 static_buttons=self.static_buttons,
+                new_message=True,
             )
             is_give = (selection == 1)
+            new_message=False
 
         candidate = [x for x in self.players if x != self.knife]
         __, selection = yield from single_choice(
             original_message=self.m,
             candidate=candidate,
             whitelist=[self.knife],
-            text=self.generate_game_message(_("%s select target") % self.knife),
+            text=self.generate_game_message(
+                _("%s select target") % self.knife.mention_html(),
+            ),
             static_buttons=self.static_buttons,
+            new_message=new_message,
         )
         target = candidate[selection]
 
@@ -402,7 +405,9 @@ class BloodBoundGame:
                     whitelist=[self.victim],
                     static_buttons=self.static_buttons,
                     text=self.generate_game_message(
-                        instruction or _("%s select token:") % self.victim
+                        instruction or (
+                            _("%s select token:") % self.victim.mention_html(),
+                        ),
                     ),
                 )
 
@@ -480,7 +485,7 @@ class BloodBoundGame:
                 [_("Interfere"), _("Pass")][selection],
             ))
 
-            self.display_game_message()
+            #self.display_game_message()
 
         # victim decide
         if len(guardians) == 0:
@@ -491,7 +496,9 @@ class BloodBoundGame:
             candidate=guardians + [_("None")],
             whitelist=[self.victim],
             static_buttons=self.static_buttons,
-            text=self.generate_game_message(_("%s accept interfere?") % self.victim),
+            text=self.generate_game_message(
+                _("%s accept interfere?") % self.victim.mention_html(),
+            ),
         )
 
         if selection == len(guardians): # The (n+1)-th button
@@ -526,7 +533,7 @@ class BloodBoundGame:
         return
 
         # Dummy yield to make function generator
-        yield from range(0)
+        yield 
 
     def skill2(self):
         player = self.victim
@@ -538,16 +545,17 @@ class BloodBoundGame:
             candidate=candidate,
             whitelist=[player],
             text=self.generate_game_message(
-                _("%s a player to trigger skill:") % player,
+                _("%s a player to trigger skill:") % player.mention_html(),
             ),
             static_buttons=self.static_buttons,
         )
         self.victim = candidate[selection]
         self.log.append(_("%s casted skill on %s") % (player, self.victim))
 
-        for i in ['1st', '2nd']:
+        for i in [_("1st"), _("2nd")]:
             yield from self.select_and_apply_token(
-                instruction=_("%s select %s token:") % (self.victim, i),
+                instruction=_("%s select %s token:") %
+                    (self.victim.mention_html, i),
             )
 
     def skill3(self):
@@ -570,7 +578,8 @@ class BloodBoundGame:
                 candidate=candidate,
                 whitelist=[player],
                 text=self.generate_game_message(
-                    _("%s select %s player to check:") % (player, i),
+                    _("%s select %s player to check:") %
+                        (player.mention_html(), i),
                 ),
                 static_buttons=self.static_buttons,
             )
@@ -598,7 +607,7 @@ class BloodBoundGame:
                 candidate=[_("Kill"), _("Heal")],
                 whitelist=[player],
                 text=self.generate_game_message(
-                    _("%s select kill or heal:") % player,
+                    _("%s select kill or heal:") % player.mention_html(),
                 ),
                 static_buttons=self.static_buttons,
             )
@@ -620,7 +629,8 @@ class BloodBoundGame:
                     candidate=[E[i[0]] for i in candidate],
                     whitelist=[self.saved_victim],
                     text=self.generate_game_message(
-                        _("%s select token for healing:") % self.saved_victim
+                        _("%s select token for healing:") %
+                            self.saved_victim.mention_html(),
                     ),
                     static_buttons=self.static_buttons,
                 )
@@ -642,7 +652,7 @@ class BloodBoundGame:
             candidate=candidate,
             whitelist=[player],
             text=self.generate_game_message(
-                _("%s a player to trigger skill:") % player,
+                _("%s a player to trigger skill:") % player.mention_html(),
             ),
             static_buttons=self.static_buttons,
         )
@@ -650,9 +660,11 @@ class BloodBoundGame:
         self.victim = candidate[selection]
         self.log.append(_("%s casted skill on %s") % (player, self.victim))
 
-        yield from self.select_and_apply_token(
-            forced='s' if 's' in self.player_data[self.victim]['token_available'] else None,
-        )
+        if 's' in self.players_data[self.victim]['token_available']:
+            forced = 's'
+        else:
+            forced = None
+        yield from self.select_and_apply_token(forced=forced)
 
     def skill6(self):
         player = self.victim
@@ -673,7 +685,7 @@ class BloodBoundGame:
             candidate=candidate,
             whitelist=[player],
             text=self.generate_game_message(
-                _("%s give a shield to a player:") % player,
+                _("%s give a shield to a player:") % player.mention_html(),
             ),
             static_buttons=self.static_buttons,
         )
@@ -753,7 +765,7 @@ class BloodBoundGame:
             candidate=candidate,
             whitelist=[player],
             text=self.generate_game_message(
-                _("%s give the staff to a player:") % player,
+                _("%s give the staff to a player:") % player.mention_html(),
             ),
             static_buttons=self.static_buttons,
         )
@@ -783,7 +795,7 @@ class BloodBoundGame:
             candidate=candidate,
             whitelist=[player],
             text=self.generate_game_message(
-                _("%s give the fan to a player:") % player,
+                _("%s give the fan to a player:") % player.mention_html(),
             ),
             static_buttons=self.static_buttons,
         )
@@ -815,13 +827,13 @@ class BloodBoundGame:
         )
         target = candidate[selection]
 
-        random.shuffle(self.available_curse)
-
         __, selection = yield from single_choice(
             original_message=self.m,
             candidate=list(map(E.get, self.available_curse)),
             whitelist=[target],
-            text=self.generate_game_message(_("%s select a curse book:") % target),
+            text=self.generate_game_message(
+                _("%s select a curse book:") % target.mention_html(),
+            ,
             static_buttons=self.static_buttons,
         )
 
