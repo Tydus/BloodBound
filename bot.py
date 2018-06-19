@@ -868,7 +868,7 @@ class BloodBoundGame:
 
         if notice:
             l.append('')
-            l.append(u'<b>%s</b>' % notice)
+            l.append(u'%s' % notice)
 
         return u'\n'.join(l)
 
