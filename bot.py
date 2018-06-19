@@ -258,6 +258,7 @@ class BloodBoundGame:
     def prepare_game(self):
         self.player_data = dict()
         ranks = self.shuffle_rank()
+        ranks = [6, -8]
 
         for p, r in zip(self.players, ranks):
             # convert 'c' to the real color (r / b)
@@ -286,7 +287,7 @@ class BloodBoundGame:
 
         # Skill 6
         shield_colors = ['green', 'purple']
-        shield_colors.shuffle()
+        random.shuffle(shield_colors)
         self.available_shields = {6: shield_colors[0], -6: shield_colors[1]}
         self.shields = []
 
@@ -699,7 +700,7 @@ class BloodBoundGame:
                 pdata['item'].remove('sword%s' % color[0])
                 data['item'].remove('shield%s' % color[0])
 
-                del self.shields[i]
+                del self.shields[n]
 
         if has_sword:
             self.log.append(_("%s's swords are invalidated") % player)
