@@ -825,7 +825,8 @@ class BloodBoundGame:
         l += self.log
         l.append('')
 
-        for player, data in self.player_data.items():
+        for player in self.players:
+            data = self.player_data[player]
             ret = '%-12s' % str(player)[:12]
             for t in data['token_used']:
                 ret += E[t[0]]
