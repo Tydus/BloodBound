@@ -64,7 +64,7 @@ E={
     "swordg": u"🗡",
     "shieldp": u"🔰",
     "swordp": u"🔪",
-    "staff": u"⚕️",      # Skill 8
+    "staff": u"⚕",      # Skill 8
     "fan": u"fan",       # Skill 9
     "curse0": u"📕",     # Skill 10
     "curse1": u"📗",
@@ -169,7 +169,7 @@ class BloodBoundGame:
             winner = of
 
         # Skill 10
-        if self.real_curse:
+        if self.real_curse != None:
             real_curse_book = "curse%d" % self.real_curse
             self.log("The real curse book is %s." % E[real_curse_book])
 
@@ -261,7 +261,6 @@ class BloodBoundGame:
     def prepare_game(self):
         self.player_data = dict()
         ranks = self.shuffle_rank()
-        ranks = [6, -8]
 
         for p, r in zip(self.players, ranks):
             # convert 'c' to the real color (r / b)
@@ -297,7 +296,11 @@ class BloodBoundGame:
         # Skill 10
         if len(self.players) % 2 == 1:
             self.available_curse = ["curse%d" % i for i in range(4)]
-            self.real_curse = random.randint(0, 3)
+
+            #size = (len(self.players) - 3) / 2
+            size = 3
+            self.available_curse = self.available_curse[:size]
+            self.real_curse = random.randint(0, size - 1)
         else:
             self.real_curse = None
 
@@ -663,6 +666,13 @@ class BloodBoundGame:
     def skill6(self):
         player = self.victim
         pdata = self.player_data[player]
+
+        if pdata['token_available'] == []:
+            self.log.append(
+                _("%s already has 3 tokens, not triggering skill") % player,
+            )
+            return
+
         color = self.available_shields[pdata['rank']]
 
         candidate = [x for x in self.players if x != player]
@@ -706,7 +716,7 @@ class BloodBoundGame:
                 del self.shields[n]
 
         if has_sword:
-            self.log.append(_("%s's swords are invalidated") % player)
+            self.log.append(_("%s's shields are invalidated") % player)
 
     def skill6_isprotected(self, player):
         for i in self.shields:
