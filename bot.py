@@ -63,8 +63,10 @@ E={
     "swordp": u"🔪",
     "staff": u"⚕️",      # Skill 8
     "fan": u"fan",       # Skill 9
-    "real_curse": u"💢", # Skill 10
-    "fake_curse": u"💢", # Skill 10
+    "curse0": u"📕",     # Skill 10
+    "curse1": u"📗",
+    "curse2": u"📘",
+    "curse3": u"📙",
     "reserved": u"🔮♨️",
 }
 
@@ -136,6 +138,7 @@ class BloodBoundGame:
     def show_winner(self):
         victim_rank = self.player_data[self.victim]['rank']
 
+        # Skill 10
         if abs(victim_rank) == 10:
             self.display_game_message(_("Inquisitor wins!"))
             return
@@ -148,12 +151,17 @@ class BloodBoundGame:
         else:
             winner = of
 
-        for player, data in self.player_data.items():
-            if (data['rank'] == self.target[winner] and
-               'real_curse' in data['item']
-            ):
-                self.display_game_message(_("Inquisitor wins!"))
-                return
+        # Skill 10
+        if self.real_curse:
+            real_curse_book = "curse%d" % self.real_curse
+            self.log("The real curse book is %s." % E[real_curse_book])
+
+            for player, data in self.player_data.items():
+                if (data['rank'] == self.target[winner] and
+                    real_curse_book in data['item']
+                ):
+                    self.display_game_message(_("Inquisitor wins!"))
+                    return
 
         self.display_game_message(_("%s wins!") % winner)
 
@@ -270,12 +278,10 @@ class BloodBoundGame:
 
         # Skill 10
         if len(self.players) % 2 == 1:
-            self.available_curse = (
-                ['real_curse'] +
-                ['fake_curse'] * ((len(self.players) - 5) // 2)
-            )
+            self.available_curse = ["curse%d" % i for i in range(4)]
+            self.real_curse = random.randint(0, 3)
         else:
-            self.available_curse = None
+            self.real_curse = None
 
         self.knife = self.players[random.randint(0, len(self.players) - 1)]
 
@@ -353,7 +359,7 @@ class BloodBoundGame:
                 self.victim, E[selected_token[0]],
             ))
 
-            # Skill
+            # Skills
             if selected_token[-1] == 's':
                 func = getattr(self, 'skill' + str(abs(self.player_data[self.victim]['rank'])))
                 yield from func()
@@ -771,14 +777,12 @@ class BloodBoundGame:
         player = self.victim
 
         if self.available_curse == []:
-            self.log.append(_("%s have no curses left") % player)
+            self.log.append(_("%s have no curse books left") % player)
             return
 
         candidate = [x
             for x in self.players
             if x != player
-            #and 'real_curse' not in self.player_data[x]['item']
-            #and 'fake_curse' not in self.player_data[x]['item']
         ]
 
         __, selection = yield from single_choice(
@@ -786,7 +790,7 @@ class BloodBoundGame:
             candidate=candidate,
             whitelist=[player],
             text=self.generate_game_message(
-                _("%s give the curse to a player:") % player,
+                _("%s give a curse book to a player:") % player,
             ),
             static_buttons=self.static_buttons,
         )
@@ -798,7 +802,7 @@ class BloodBoundGame:
             original_message=self.m,
             candidate=list(map(E.get, self.available_curse)),
             whitelist=[target],
-            text=self.generate_game_message(_("%s select a curse:") % target),
+            text=self.generate_game_message(_("%s select a curse book:") % target),
             static_buttons=self.static_buttons,
         )
 
@@ -806,7 +810,7 @@ class BloodBoundGame:
         self.player_data[target]['item'].append(curse)
         self.available_curse.remove(curse)
 
-        self.log.append(_("%s gave a curse to %s") % (player, target))
+        self.log.append(_("%s gave a curse book to %s") % (player, target))
 
     def display_game_message(self, notice=''):
         self.m = self.m.edit_text(
@@ -897,7 +901,7 @@ def info_button(bot, update):
 
     ret = []
     ret.append(_(u"Player %s") % display_name(user))
-    ret.append(_(u"Faction: %s") % E[faction_name(data['rank'])[0]])
+    ret.append(_(u"Clan: %s") % E[faction_name(data['rank'])[0]])
     ret.append(_(u"Rank: %d(%s)") % (abs(data['rank']), _(rank_name[abs(data['rank'])])))
 
     icons = ''
