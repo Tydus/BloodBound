@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2018-06-19 17:42+0900\n"
+"POT-Creation-Date: 2018-06-19 20:39+0900\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -15,371 +15,375 @@ msgstr ""
 "Generated-By: pygettext.py 1.5\n"
 
 
-#: ../bot.py:78
+#: ../bot.py:70
 msgid "Elder"
 msgstr ""
 
-#: ../bot.py:79
+#: ../bot.py:71
 msgid "Assassin"
 msgstr ""
 
-#: ../bot.py:80
+#: ../bot.py:72
 msgid "Harlequin"
 msgstr ""
 
-#: ../bot.py:81
+#: ../bot.py:73
 msgid "Alchemist"
 msgstr ""
 
-#: ../bot.py:82
+#: ../bot.py:74
 msgid "Mentalist"
 msgstr ""
 
-#: ../bot.py:83
+#: ../bot.py:75
 msgid "Guardian"
 msgstr ""
 
-#: ../bot.py:84
+#: ../bot.py:76
 msgid "Berserker"
 msgstr ""
 
-#: ../bot.py:85
+#: ../bot.py:77
 msgid "Mage"
 msgstr ""
 
-#: ../bot.py:86
+#: ../bot.py:78
 msgid "Courtesan"
 msgstr ""
 
-#: ../bot.py:87
+#: ../bot.py:79
 msgid "Inquisitor"
 msgstr ""
 
-#: ../bot.py:92
+#: ../bot.py:84
 msgid "Take a ✒️"
 msgstr ""
 
-#: ../bot.py:93
+#: ../bot.py:85
 msgid "Give a player 2 damages and pass him the knife"
 msgstr ""
 
-#: ../bot.py:94
+#: ../bot.py:86
 msgid "Inspect two character cards secretly"
 msgstr ""
 
-#: ../bot.py:95
+#: ../bot.py:87
 msgid "Force the interceptor to be damaged/healed once (only available when intercepted)"
 msgstr ""
 
-#: ../bot.py:96
+#: ../bot.py:88
 msgid "Give a player 1 damage (must be the number if possible) and pass him the knife"
 msgstr ""
 
-#: ../bot.py:97
+#: ../bot.py:89
 msgid "Give a 🛡/🔰 to a player and take 🗡/🔪"
 msgstr ""
 
-#: ../bot.py:98
+#: ../bot.py:90
 msgid "Give a damage to the player attacked you"
 msgstr ""
 
-#: ../bot.py:99
+#: ../bot.py:91
 msgid "Take a ⚕️ and give a ⚕️ to another player"
 msgstr ""
 
-#: ../bot.py:100
+#: ../bot.py:92
 msgid "Give a (Fan) to another player"
 msgstr ""
 
-#: ../bot.py:101
+#: ../bot.py:93
 msgid "Give a 📕📗📘📙 to a player"
 msgstr ""
 
-#: ../bot.py:130
+#: ../bot.py:122
 msgid "white"
 msgstr ""
 
-#: ../bot.py:131
+#: ../bot.py:123
 msgid "red"
 msgstr ""
 
-#: ../bot.py:132
+#: ../bot.py:124
 msgid "blue"
 msgstr ""
 
-#: ../bot.py:160 ../bot.py:180
+#: ../bot.py:152 ../bot.py:172
 msgid "Inquisitor wins!"
 msgstr ""
 
-#: ../bot.py:183
+#: ../bot.py:166
+msgid "The real curse book is %s."
+msgstr ""
+
+#: ../bot.py:175
 msgid "%s wins!"
 msgstr ""
 
-#: ../bot.py:188
+#: ../bot.py:180
 msgid "Looking for players"
 msgstr ""
 
-#: ../bot.py:191
+#: ../bot.py:183
 msgid "Enter / Start"
 msgstr ""
 
-#: ../bot.py:205
+#: ../bot.py:197
 msgid "You are already in this game."
 msgstr ""
 
-#: ../bot.py:210
+#: ../bot.py:202
 msgid "Game full."
 msgstr ""
 
-#: ../bot.py:216
+#: ../bot.py:208
 msgid "Not enough players."
 msgstr ""
 
-#: ../bot.py:221 ../bot.py:231
+#: ../bot.py:213 ../bot.py:223
 msgid "%s joined"
 msgstr ""
 
-#: ../bot.py:222
+#: ../bot.py:214
 msgid "Game commencing."
 msgstr ""
 
-#: ../bot.py:311
+#: ../bot.py:302
 msgid "%s action"
 msgstr ""
 
-#: ../bot.py:319
+#: ../bot.py:310
 msgid "Inquisitor %s cannot attack"
 msgstr ""
 
-#: ../bot.py:324
+#: ../bot.py:315
 msgid "Attack"
 msgstr ""
 
-#: ../bot.py:324 ../bot.py:472 ../bot.py:489
+#: ../bot.py:315 ../bot.py:463 ../bot.py:480
 msgid "Pass"
 msgstr ""
 
-#: ../bot.py:326
+#: ../bot.py:317
 msgid "%s select action"
 msgstr ""
 
-#: ../bot.py:336
+#: ../bot.py:327
 msgid "%s select target"
 msgstr ""
 
-#: ../bot.py:350
+#: ../bot.py:341
 msgid "%s gave the knife to %s."
 msgstr ""
 
-#: ../bot.py:356
+#: ../bot.py:347
 msgid "%s is attacking %s"
 msgstr ""
 
-#: ../bot.py:379
+#: ../bot.py:370
 msgid "%s selected %s token"
 msgstr ""
 
-#: ../bot.py:414
+#: ../bot.py:405
 msgid "%s select token:"
 msgstr ""
 
-#: ../bot.py:431
+#: ../bot.py:422
 msgid "Selection invalid, please retry."
 msgstr ""
 
-#: ../bot.py:472 ../bot.py:489
+#: ../bot.py:463 ../bot.py:480
 msgid "Interfere"
 msgstr ""
 
-#: ../bot.py:477
+#: ../bot.py:468
 msgid "everyone else select interfere or pass"
 msgstr ""
 
-#: ../bot.py:487
+#: ../bot.py:478
 msgid "%s choosed %s"
 msgstr ""
 
-#: ../bot.py:500
+#: ../bot.py:491
 msgid "None"
 msgstr ""
 
-#: ../bot.py:503
+#: ../bot.py:494
 msgid "%s accept interfere?"
 msgstr ""
 
-#: ../bot.py:507
+#: ../bot.py:498
 msgid "%s rejected interference"
 msgstr ""
 
-#: ../bot.py:509
+#: ../bot.py:500
 msgid "%s accepted %s's interference"
 msgstr ""
 
-#: ../bot.py:550 ../bot.py:654
+#: ../bot.py:541 ../bot.py:645
 msgid "%s a player to trigger skill:"
 msgstr ""
 
-#: ../bot.py:555 ../bot.py:660 ../bot.py:734
+#: ../bot.py:546 ../bot.py:651 ../bot.py:725
 msgid "%s casted skill on %s"
 msgstr ""
 
-#: ../bot.py:559
+#: ../bot.py:550
 msgid "%s select %s token:"
 msgstr ""
 
-#: ../bot.py:566
+#: ../bot.py:557
 msgid "1st"
 msgstr ""
 
-#: ../bot.py:566
+#: ../bot.py:557
 msgid "2nd"
 msgstr ""
 
-#: ../bot.py:574
+#: ../bot.py:565
 msgid "No enough player to be checked."
 msgstr ""
 
-#: ../bot.py:582
+#: ../bot.py:573
 msgid "%s select %s player to check:"
 msgstr ""
 
-#: ../bot.py:589
+#: ../bot.py:580
 msgid "%s checked %s"
 msgstr ""
 
-#: ../bot.py:601
+#: ../bot.py:592
 msgid "%s has no token shown, %s must kill %s"
 msgstr ""
 
-#: ../bot.py:607
+#: ../bot.py:598
 msgid "Heal"
 msgstr ""
 
-#: ../bot.py:607
+#: ../bot.py:598
 msgid "Kill"
 msgstr ""
 
-#: ../bot.py:610
+#: ../bot.py:601
 msgid "%s select kill or heal:"
 msgstr ""
 
-#: ../bot.py:618
+#: ../bot.py:609
 msgid "%s killed %s"
 msgstr ""
 
-#: ../bot.py:632
+#: ../bot.py:623
 msgid "%s select token for healing:"
 msgstr ""
 
-#: ../bot.py:639
+#: ../bot.py:630
 msgid "%s healed %s"
 msgstr ""
 
-#: ../bot.py:672
+#: ../bot.py:663
 msgid "%s already has 3 tokens, not triggering skill"
 msgstr ""
 
-#: ../bot.py:685
+#: ../bot.py:676
 msgid "%s give a shield to a player:"
 msgstr ""
 
-#: ../bot.py:697
+#: ../bot.py:688
 msgid "%s gave a shield to %s"
 msgstr ""
 
-#: ../bot.py:719
+#: ../bot.py:710
 msgid "%s's shields are invalidated"
 msgstr ""
 
-#: ../bot.py:724
+#: ../bot.py:715
 msgid "%s is protected by %s's shield"
 msgstr ""
 
-#: ../bot.py:765
+#: ../bot.py:756
 msgid "%s give the staff to a player:"
 msgstr ""
 
-#: ../bot.py:779
+#: ../bot.py:770
 msgid "%s gave a staff to %s"
 msgstr ""
 
-#: ../bot.py:795
+#: ../bot.py:786
 msgid "%s give the fan to a player:"
 msgstr ""
 
-#: ../bot.py:802
+#: ../bot.py:793
 msgid "%s gave a fan to %s"
 msgstr ""
 
-#: ../bot.py:808
+#: ../bot.py:799
 msgid "%s have no curse books left"
 msgstr ""
 
-#: ../bot.py:821
+#: ../bot.py:812
 msgid "%s give a curse book to a player:"
 msgstr ""
 
-#: ../bot.py:833
+#: ../bot.py:824
 msgid "%s select a curse book:"
 msgstr ""
 
-#: ../bot.py:841
+#: ../bot.py:832
 msgid "%s gave a curse book to %s"
 msgstr ""
 
-#: ../bot.py:852
+#: ../bot.py:843
 msgid "<b>round %d</b>"
 msgstr ""
 
-#: ../bot.py:878
+#: ../bot.py:869
 msgid "Game cancelled."
 msgstr ""
 
-#: ../bot.py:881
+#: ../bot.py:872
 msgid "<b>Game cancelled.</b>"
 msgstr ""
 
-#: ../bot.py:889
+#: ../bot.py:880
 msgid "The game must be started in a group."
 msgstr ""
 
-#: ../bot.py:893
+#: ../bot.py:884
 msgid "Another game is in progress."
 msgstr ""
 
-#: ../bot.py:912
+#: ../bot.py:903
 msgid "You are not the owner of the game."
 msgstr ""
 
-#: ../bot.py:927
+#: ../bot.py:918
 msgid "You are not in this game, please wait for the next game."
 msgstr ""
 
-#: ../bot.py:934
+#: ../bot.py:925
 msgid "Clan: %s"
 msgstr ""
 
-#: ../bot.py:935
+#: ../bot.py:926
 msgid "Rank: %d(%s)"
 msgstr ""
 
-#: ../bot.py:944
+#: ../bot.py:935
 msgid "Available token: %s"
 msgstr ""
 
-#: ../bot.py:946
+#: ../bot.py:937
 msgid "Skill: %s"
 msgstr ""
 
-#: ../bot.py:953
+#: ../bot.py:944
 msgid "Next player (%s) is %s"
 msgstr ""
 
-#: ../bot.py:958
+#: ../bot.py:949
 msgid "Checked players:"
 msgstr ""
 
-#: ../bot.py:970
+#: ../bot.py:961
 msgid "Use /start_game to test this bot."
 msgstr ""
 
