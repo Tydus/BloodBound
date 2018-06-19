@@ -30,6 +30,9 @@ from interactivehandler import InteractiveHandler, ConversationCancelled
 
 from gamebot import single_choice, _make_choice_keyboard
 
+# For pygettext
+_T = lambda s: s
+
 E={
     "empty": u"⚫️",
     'info': u'ℹ️',
@@ -72,16 +75,16 @@ E={
 
 rank_name = [
     None,
-    "Elder",
-    "Assassin",
-    "Harlequin",
-    "Alchemist",
-    "Mentalist",
-    "Guardian",
-    "Berserker",
-    "Mage",
-    "Courtesan",
-    "Inquisitor",
+    _T("Elder"),
+    _T("Assassin"),
+    _T("Harlequin"),
+    _T("Alchemist"),
+    _T("Mentalist"),
+    _T("Guardian"),
+    _T("Berserker"),
+    _T("Mage"),
+    _T("Courtesan"),
+    _T("Inquisitor"),
 ]
 
 token_list = [
@@ -110,9 +113,9 @@ token_list = [
 
 # Get user's REAL faction name (Red/Blue/White) from rank
 def faction_name(rank):
-    if abs(rank) == 10: return 'white'
-    if rank > 0: return 'red'
-    if rank < 0: return 'blue'
+    if abs(rank) == 10: return _T("white")
+    if rank > 0: return _T("red")
+    if rank < 0: return _T("blue")
 
 class BloodBoundGame:
     games = {}
