@@ -930,7 +930,7 @@ def info_button(bot, update):
 
     rank = abs(data['rank'])
     ret = []
-    ret.append(_(u"Player %s") % display_name(user))
+    #ret.append(_(u"Player %s") % display_name(user))
     ret.append(_(u"Clan: %s") % E[faction_name(data['rank'])[0]])
     ret.append(_(u"Rank: %d(%s)") % (rank, _(rank_name[rank])))
 

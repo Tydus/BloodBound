@@ -3,7 +3,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: 0.1\n"
-"POT-Creation-Date: 2018-06-19 15:57+DST\n"
+"POT-Creation-Date: 2018-06-19 17:42+0900\n"
 "PO-Revision-Date: \n"
 "Last-Translator: 漠伦(Mo Lun) <i@molun.net>\n"
 "Language-Team: \n"
@@ -15,59 +15,59 @@ msgstr ""
 "X-Generator: Poedit 2.0.8\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: bot.py:78
+#: ../bot.py:78
 msgid "Elder"
 msgstr "Elder"
 
-#: bot.py:79
+#: ../bot.py:79
 msgid "Assassin"
 msgstr "Assassin"
 
-#: bot.py:80
+#: ../bot.py:80
 msgid "Harlequin"
 msgstr "Harlequin"
 
-#: bot.py:81
+#: ../bot.py:81
 msgid "Alchemist"
 msgstr "Alchemist"
 
-#: bot.py:82
+#: ../bot.py:82
 msgid "Mentalist"
 msgstr "Mentalist"
 
-#: bot.py:83
+#: ../bot.py:83
 msgid "Guardian"
 msgstr "Guardian"
 
-#: bot.py:84
+#: ../bot.py:84
 msgid "Berserker"
 msgstr "Berserker"
 
-#: bot.py:85
+#: ../bot.py:85
 msgid "Mage"
 msgstr "Mage"
 
-#: bot.py:86
+#: ../bot.py:86
 msgid "Courtesan"
 msgstr "Courtesan"
 
-#: bot.py:87
+#: ../bot.py:87
 msgid "Inquisitor"
 msgstr "Inquisitor"
 
-#: bot.py:92
+#: ../bot.py:92
 msgid "Take a ✒️"
 msgstr "Take a ✒️"
 
-#: bot.py:93
+#: ../bot.py:93
 msgid "Give a player 2 damages and pass him the knife"
 msgstr "Give a player 2 damages and pass him the knife"
 
-#: bot.py:94
+#: ../bot.py:94
 msgid "Inspect two character cards secretly"
 msgstr "Inspect two character cards secretly"
 
-#: bot.py:95
+#: ../bot.py:95
 msgid ""
 "Force the interceptor to be damaged/healed once (only available when "
 "intercepted)"
@@ -75,7 +75,7 @@ msgstr ""
 "Force the interceptor to be damaged/healed once (only available when "
 "intercepted)"
 
-#: bot.py:96
+#: ../bot.py:96
 msgid ""
 "Give a player 1 damage (must be the number if possible) and pass him the "
 "knife"
@@ -83,319 +83,313 @@ msgstr ""
 "Give a player 1 damage (must be the number if possible) and pass him the "
 "knife"
 
-#: bot.py:97
+#: ../bot.py:97
 msgid "Give a 🛡/🔰 to a player and take 🗡/🔪"
 msgstr "Give a 🛡/🔰 to a player and take 🗡/🔪"
 
-#: bot.py:98
+#: ../bot.py:98
 msgid "Give a damage to the player attacked you"
 msgstr "Give a damage to the player attacked you"
 
-#: bot.py:99
+#: ../bot.py:99
 msgid "Take a ⚕️ and give a ⚕️ to another player"
 msgstr "Take a ⚕️ and give a ⚕️ to another player"
 
-#: bot.py:100
+#: ../bot.py:100
 msgid "Give a (Fan) to another player"
 msgstr "Give a (Fan) to another player"
 
-#: bot.py:101
+#: ../bot.py:101
 msgid "Give a 📕📗📘📙 to a player"
 msgstr "Give a 📕📗📘📙 to a player"
 
-#: bot.py:130
+#: ../bot.py:130
 msgid "white"
 msgstr "white"
 
-#: bot.py:131
+#: ../bot.py:131
 msgid "red"
 msgstr "red"
 
-#: bot.py:132
+#: ../bot.py:132
 msgid "blue"
 msgstr "blue"
 
-#: bot.py:160 bot.py:180
+#: ../bot.py:160 ../bot.py:180
 msgid "Inquisitor wins!"
 msgstr "Inquisitor wins!"
 
-#: bot.py:183
+#: ../bot.py:183
 msgid "%s wins!"
 msgstr "%s wins!"
 
-#: bot.py:188
+#: ../bot.py:188
 msgid "Looking for players"
 msgstr "Looking for players"
 
-#: bot.py:191
+#: ../bot.py:191
 msgid "Enter / Start"
 msgstr "Enter / Start"
 
-#: bot.py:205
+#: ../bot.py:205
 msgid "You are already in this game."
 msgstr "You are already in this game."
 
-#: bot.py:210
+#: ../bot.py:210
 msgid "Game full."
 msgstr "Game full."
 
-#: bot.py:216
+#: ../bot.py:216
 msgid "Not enough players."
 msgstr "Not enough players."
 
-#: bot.py:221 bot.py:231
+#: ../bot.py:221 ../bot.py:231
 msgid "%s joined"
 msgstr "%s joined"
 
-#: bot.py:222
+#: ../bot.py:222
 msgid "Game commencing."
 msgstr "Game commencing."
 
-#: bot.py:311
+#: ../bot.py:311
 msgid "%s action"
 msgstr "%s action"
 
-#: bot.py:319
+#: ../bot.py:319
 msgid "Inquisitor %s cannot attack"
 msgstr "Inquisitor %s cannot attack"
 
-#: bot.py:324
+#: ../bot.py:324
 msgid "Attack"
 msgstr "Attack"
 
-#: bot.py:324 bot.py:472 bot.py:489
+#: ../bot.py:324 ../bot.py:472 ../bot.py:489
 msgid "Pass"
 msgstr "Pass"
 
-#: bot.py:326
+#: ../bot.py:326
 msgid "%s select action"
 msgstr "%s select action"
 
-#: bot.py:336
+#: ../bot.py:336
 msgid "%s select target"
 msgstr "%s select target"
 
-#: bot.py:350
+#: ../bot.py:350
 msgid "%s gave the knife to %s."
 msgstr "%s gave the knife to %s."
 
-#: bot.py:356
+#: ../bot.py:356
 msgid "%s is attacking %s"
 msgstr "%s is attacking %s"
 
-#: bot.py:379
+#: ../bot.py:379
 msgid "%s selected %s token"
 msgstr "%s selected %s token"
 
-#: bot.py:414
+#: ../bot.py:414
 msgid "%s select token:"
 msgstr "%s select token:"
 
-#: bot.py:431
+#: ../bot.py:431
 msgid "Selection invalid, please retry."
 msgstr "Selection invalid, please retry."
 
-#: bot.py:472 bot.py:489
+#: ../bot.py:472 ../bot.py:489
 msgid "Interfere"
 msgstr "Interfere"
 
-#: bot.py:477
+#: ../bot.py:477
 msgid "everyone else select interfere or pass"
 msgstr "everyone else select interfere or pass"
 
-#: bot.py:487
-#| msgid "%s checked %s"
+#: ../bot.py:487
 msgid "%s choosed %s"
 msgstr "%s choosed %s"
 
-#: bot.py:500
+#: ../bot.py:500
 msgid "None"
 msgstr "None"
 
-#: bot.py:503
+#: ../bot.py:503
 msgid "%s accept interfere?"
 msgstr "%s accept interfere?"
 
-#: bot.py:507
+#: ../bot.py:507
 msgid "%s rejected interference"
 msgstr "%s rejected interference"
 
-#: bot.py:509
+#: ../bot.py:509
 msgid "%s accepted %s's interference"
 msgstr "%s accepted %s's interference"
 
-#: bot.py:550 bot.py:654
+#: ../bot.py:550 ../bot.py:654
 msgid "%s a player to trigger skill:"
 msgstr "%s a player to trigger skill:"
 
-#: bot.py:555 bot.py:660 bot.py:734
+#: ../bot.py:555 ../bot.py:660 ../bot.py:734
 msgid "%s casted skill on %s"
 msgstr "%s casted skill on %s"
 
-#: bot.py:559
+#: ../bot.py:559
 msgid "%s select %s token:"
 msgstr "%s select %s token:"
 
-#: bot.py:566
+#: ../bot.py:566
 msgid "1st"
 msgstr "1st"
 
-#: bot.py:566
+#: ../bot.py:566
 msgid "2nd"
 msgstr "2nd"
 
-#: bot.py:574
+#: ../bot.py:574
 msgid "No enough player to be checked."
 msgstr "No enough player to be checked."
 
-#: bot.py:582
+#: ../bot.py:582
 msgid "%s select %s player to check:"
 msgstr "%s select %s player to check:"
 
-#: bot.py:589
+#: ../bot.py:589
 msgid "%s checked %s"
 msgstr "%s checked %s"
 
-#: bot.py:601
+#: ../bot.py:601
 msgid "%s has no token shown, %s must kill %s"
 msgstr "%s has no token shown, %s must kill %s"
 
-#: bot.py:607
+#: ../bot.py:607
 msgid "Heal"
 msgstr "Heal"
 
-#: bot.py:607
+#: ../bot.py:607
 msgid "Kill"
 msgstr "Kill"
 
-#: bot.py:610
+#: ../bot.py:610
 msgid "%s select kill or heal:"
 msgstr "%s select kill or heal:"
 
-#: bot.py:618
+#: ../bot.py:618
 msgid "%s killed %s"
 msgstr "%s killed %s"
 
-#: bot.py:632
+#: ../bot.py:632
 msgid "%s select token for healing:"
 msgstr "%s select token for healing:"
 
-#: bot.py:639
+#: ../bot.py:639
 msgid "%s healed %s"
 msgstr "%s healed %s"
 
-#: bot.py:672
-#| msgid "%s a player to trigger skill:"
+#: ../bot.py:672
 msgid "%s already has 3 tokens, not triggering skill"
 msgstr "%s already has 3 tokens, not triggering skill"
 
-#: bot.py:685
+#: ../bot.py:685
 msgid "%s give a shield to a player:"
 msgstr "%s give a shield to a player:"
 
-#: bot.py:697
+#: ../bot.py:697
 msgid "%s gave a shield to %s"
 msgstr "%s gave a shield to %s"
 
-#: bot.py:719
-#| msgid "%s's swords are invalidated"
+#: ../bot.py:719
 msgid "%s's shields are invalidated"
 msgstr "%s's shields are invalidated"
 
-#: bot.py:724
-#| msgid "%s is protected by the shield"
+#: ../bot.py:724
 msgid "%s is protected by %s's shield"
 msgstr "%s is protected by %s's shield"
 
-#: bot.py:765
+#: ../bot.py:765
 msgid "%s give the staff to a player:"
 msgstr "%s give the staff to a player:"
 
-#: bot.py:779
+#: ../bot.py:779
 msgid "%s gave a staff to %s"
 msgstr "%s gave a staff to %s"
 
-#: bot.py:795
+#: ../bot.py:795
 msgid "%s give the fan to a player:"
 msgstr "%s give the fan to a player:"
 
-#: bot.py:802
+#: ../bot.py:802
 msgid "%s gave a fan to %s"
 msgstr "%s gave a fan to %s"
 
-#: bot.py:808
-#| msgid "%s have no curses left"
+#: ../bot.py:808
 msgid "%s have no curse books left"
 msgstr "%s have no curse books left"
 
-#: bot.py:821
-#| msgid "%s give the curse to a player:"
+#: ../bot.py:821
 msgid "%s give a curse book to a player:"
 msgstr "%s give a curse book to a player:"
 
-#: bot.py:833
-#| msgid "%s select a curse:"
+#: ../bot.py:833
 msgid "%s select a curse book:"
 msgstr "%s select a curse book:"
 
-#: bot.py:841
-#| msgid "%s gave a curse to %s"
+#: ../bot.py:841
 msgid "%s gave a curse book to %s"
 msgstr "%s gave a curse book to %s"
 
-#: bot.py:852
+#: ../bot.py:852
 msgid "<b>round %d</b>"
 msgstr "<b>round %d</b>"
 
-#: bot.py:878
+#: ../bot.py:878
 msgid "Game cancelled."
 msgstr "Game cancelled."
 
-#: bot.py:881
+#: ../bot.py:881
 msgid "<b>Game cancelled.</b>"
 msgstr "<b>Game cancelled.</b>"
 
-#: bot.py:889
+#: ../bot.py:889
 msgid "The game must be started in a group."
 msgstr "The game must be started in a group."
 
-#: bot.py:893
+#: ../bot.py:893
 msgid "Another game is in progress."
 msgstr "Another game is in progress."
 
-#: bot.py:912
+#: ../bot.py:912
 msgid "You are not the owner of the game."
 msgstr "You are not the owner of the game."
 
-#: bot.py:927
+#: ../bot.py:927
 msgid "You are not in this game, please wait for the next game."
 msgstr "You are not in this game, please wait for the next game."
 
-#: bot.py:932
-msgid "Player %s"
-msgstr "Player %s"
-
-#: bot.py:933
-#| msgid "Faction: %s"
+#: ../bot.py:934
 msgid "Clan: %s"
 msgstr "Clan: %s"
 
-#: bot.py:934
+#: ../bot.py:935
 msgid "Rank: %d(%s)"
 msgstr "Rank: %d(%s)"
 
-#: bot.py:943
+#: ../bot.py:944
 msgid "Available token: %s"
 msgstr "Available token: %s"
 
-#: bot.py:950
+#: ../bot.py:946
+msgid "Skill: %s"
+msgstr "Skill: %s"
+
+#: ../bot.py:953
 msgid "Next player (%s) is %s"
 msgstr "Next player (%s) is %s"
 
-#: bot.py:955
+#: ../bot.py:958
 msgid "Checked players:"
 msgstr "Checked players:"
 
-#: bot.py:967
+#: ../bot.py:970
 msgid "Use /start_game to test this bot."
 msgstr "Use /start_game to test this bot."
+
+#~ msgid "Player %s"
+#~ msgstr "Player %s"
