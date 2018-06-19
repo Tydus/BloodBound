@@ -929,7 +929,7 @@ def info_button(bot, update):
             ret.append('%s: %s%s' % (
                 player,
                 E[faction_name(rank)[0]],
-                E[str(abs(rank))],
+                E[str(abs(rank) % 10)],
             ))
 
     return query.answer(u'\n'.join(ret), True)
