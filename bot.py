@@ -263,8 +263,10 @@ class BloodBoundGame:
         self.game_end = False
 
         # Skill 6
-        self.shields = {}
-        self.current_shield_id = 0
+        shield_colors = ['green', 'purple']
+        shield_colors.shuffle()
+        self.available_shields = {6: shield_colors[0], -6: shield_colors[1]}
+        self.shields = []
 
         # Skill 10
         if len(self.players) % 2 == 1:
@@ -636,6 +638,8 @@ class BloodBoundGame:
 
     def skill6(self):
         player = self.victim
+        pdata = self.player_data[player]
+        color = self.available_shields[pdata['rank']]
 
         candidate = [x for x in self.players if x != player]
 
@@ -644,42 +648,48 @@ class BloodBoundGame:
             candidate=candidate,
             whitelist=[player],
             text=self.generate_game_message(
-                _("%s give a shield to a player:") % player,
+                _("%s give a shield to a player:") % player),
             ),
             static_buttons=self.static_buttons,
         )
 
         target = candidate[selection]
+        data = self.player_data[target]
 
-        self.player_data[player]['item'].append('sword%d'  % self.current_shield_id)
-        self.player_data[target]['item'].append('shield%d' % self.current_shield_id)
+        if ('sword%s' % color[0]) not in pdata['item']:
+            pdata['item'].append('sword%s' % color[0])
+        data['item'].append('shield%s' % color[0])
 
         self.log.append(_("%s gave a shield to %s") % (player, target))
 
-        self.shields[self.current_shield_id] = {
-            'sword': player,
-            'shield': target,
-        }
-        self.current_shield_id += 1
+        self.shields.append({'sword': player, 'shield': target})
+
 
     def skill6_invalidate(self):
         player = self.victim
+        pdata = self.player_data[player]
+        color = self.available_shields[pdata['rank']]
 
         has_sword = False
-        for k, v in list(self.shields.items()): # a read-only copy
-            if v['sword'] == player:
-                self.player_data[v['sword'] ]['item'].remove('sword%d'  % k)
-                self.player_data[v['shield']]['item'].remove('shield%d' % k)
+        for n, i in enumerate(self.shields): # a read-only copy
+            if i['sword'] == player:
                 has_sword = True
-                del self.shields[k]
+                data = self.player_data[i['shield']]
+
+                pdata['item'].remove('sword%s' % color[0])
+                data['item'].remove('shield%s' % color[0])
+
+                del self.shields[i]
 
         if has_sword:
             self.log.append(_("%s's swords are invalidated") % player)
 
     def skill6_isprotected(self, player):
-        for n, i in self.shields.items():
+        for i in self.shields:
             if i['shield'] == player:
-                self.log.append(_("%s is protected by the shield") % player)
+                self.log.append(_("%s is protected by %s's shield") % (
+                    player, i['sword'],
+                ))
                 return True
         return False
 
