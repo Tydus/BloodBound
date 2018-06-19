@@ -52,15 +52,7 @@ E={
     "0": u"*️⃣",
     "s": u"#️⃣",
     "quill": u"✒️",      # Skill 1
-    "shield0": u"🖤",    # Skill 6
-    "shield1": u"💛",
-    "shield2": u"💙",
-    "shield3": u"💜",
-    "sword0": u"🖤",
-    "sword1": u"💛",
-    "sword2": u"💙",
-    "sword3": u"💜",
-    "shieldg": u"🛡",
+    "shieldg": u"🛡",    # Skill 6
     "swordg": u"🗡",
     "shieldp": u"🔰",
     "swordp": u"🔪",
