@@ -833,7 +833,7 @@ class BloodBoundGame:
             whitelist=[target],
             text=self.generate_game_message(
                 _("%s select a curse book:") % target.mention_html(),
-            ,
+            ),
             static_buttons=self.static_buttons,
         )
 
