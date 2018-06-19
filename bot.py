@@ -31,37 +31,41 @@ from interactivehandler import InteractiveHandler, ConversationCancelled
 from gamebot import single_choice, _make_choice_keyboard
 
 E={
-   "empty": u"⚫️",
-   'info': u'ℹ️',
-   "r": u"🔴",
-   "b": u"🔵",
-   "w": u"⚪️",
-   "a": u"㊙️",
-   "1": u"1️⃣",
-   "2": u"2️⃣",
-   "3": u"3️⃣",
-   "4": u"4️⃣",
-   "5": u"5️⃣",
-   "6": u"6️⃣",
-   "7": u"7️⃣",
-   "8": u"8️⃣",
-   "9": u"9️⃣",
-   "0": u"*️⃣",
-   "s": u"#️⃣",
-   "quill": u"✒️",      # Skill 1
-   "shield0": u"🖤",    # Skill 6
-   "shield1": u"💛",
-   "shield2": u"💙",
-   "shield3": u"💜",
-   "sword0": u"🖤",
-   "sword1": u"💛",
-   "sword2": u"💙",
-   "sword3": u"💜",
-   "staff": u"⚕️",      # Skill 8
-   "fan": u"fan",       # Skill 9
-   "real_curse": u"💢", # Skill 10
-   "fake_curse": u"💢", # Skill 10
-   "reserved": u"🖌🗡🛡🔪🔰🔮💢♨️"
+    "empty": u"⚫️",
+    'info': u'ℹ️',
+    "r": u"🔴",
+    "b": u"🔵",
+    "w": u"⚪️",
+    "a": u"㊙️",
+    "1": u"1️⃣",
+    "2": u"2️⃣",
+    "3": u"3️⃣",
+    "4": u"4️⃣",
+    "5": u"5️⃣",
+    "6": u"6️⃣",
+    "7": u"7️⃣",
+    "8": u"8️⃣",
+    "9": u"9️⃣",
+    "0": u"*️⃣",
+    "s": u"#️⃣",
+    "quill": u"✒️",      # Skill 1
+    "shield0": u"🖤",    # Skill 6
+    "shield1": u"💛",
+    "shield2": u"💙",
+    "shield3": u"💜",
+    "sword0": u"🖤",
+    "sword1": u"💛",
+    "sword2": u"💙",
+    "sword3": u"💜",
+    "shieldg": u"🛡",
+    "swordg": u"🗡",
+    "shieldp": u"🔰",
+    "swordp": u"🔪",
+    "staff": u"⚕️",      # Skill 8
+    "fan": u"fan",       # Skill 9
+    "real_curse": u"💢", # Skill 10
+    "fake_curse": u"💢", # Skill 10
+    "reserved": u"🔮♨️",
 }
 
 rank_name = [
