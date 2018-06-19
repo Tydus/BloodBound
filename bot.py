@@ -648,7 +648,7 @@ class BloodBoundGame:
             candidate=candidate,
             whitelist=[player],
             text=self.generate_game_message(
-                _("%s give a shield to a player:") % player),
+                _("%s give a shield to a player:") % player,
             ),
             static_buttons=self.static_buttons,
         )
