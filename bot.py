@@ -306,7 +306,7 @@ class BloodBoundGame:
             is_give = 1
             new_message=True
         else:
-            __, selection = yield from single_choice(
+            update, selection = yield from single_choice(
                 original_message=self.m,
                 candidate=[_("Attack"), _("Pass")],
                 whitelist=[self.knife],
@@ -318,9 +318,10 @@ class BloodBoundGame:
             )
             is_give = (selection == 1)
             new_message=False
+            self.m = update.callback_query.message
 
         candidate = [x for x in self.players if x != self.knife]
-        __, selection = yield from single_choice(
+        update, selection = yield from single_choice(
             original_message=self.m,
             candidate=candidate,
             whitelist=[self.knife],
@@ -330,6 +331,7 @@ class BloodBoundGame:
             static_buttons=self.static_buttons,
             new_message=new_message,
         )
+        self.m = update.callback_query.message
         target = candidate[selection]
 
         return target, is_give
