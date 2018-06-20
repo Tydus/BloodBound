@@ -287,11 +287,13 @@ class BloodBoundGame:
 
         # Skill 10
         if len(self.players) % 2 == 1:
-            self.available_curse = ["curse%d" % i for i in range(4)]
+            self.available_curse = ['curse%d' % i for i in range(4)]
 
             size = max(2, (len(self.players) - 3) // 2)
             self.available_curse = self.available_curse[:size]
             self.real_curse = random.randint(0, size - 1)
+            print('Real curse: %s' % (E['curse%d' % self.real_curse]))
+            sys.stdout.flush()
         else:
             self.real_curse = None
 
