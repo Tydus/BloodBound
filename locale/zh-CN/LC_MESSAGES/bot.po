@@ -57,51 +57,48 @@ msgstr "判官"
 
 #: ../bot.py:84
 msgid "Take a ✒️"
-msgstr "Take a ✒️"
+msgstr "打出鹅毛笔 ✒️"
 
 #: ../bot.py:85
 msgid "Give a player 2 damages and pass him the knife"
-msgstr "Give a player 2 damages and pass him the knife"
+msgstr "对一位玩家强制造成两点并将匕首交给对方"
 
 #: ../bot.py:86
 msgid "Inspect two character cards secretly"
-msgstr "Inspect two character cards secretly"
+msgstr "秘密查看两位玩家的身份"
 
 #: ../bot.py:87
 msgid ""
 "Force the interceptor to be damaged/healed once (only available when "
 "intercepted)"
-msgstr ""
-"Force the interceptor to be damaged/healed once (only available when "
-"intercepted)"
+msgstr "使你挡刀的玩家强制受到或治愈一点伤害（仅在发起挡刀时才可发动）"
 
 #: ../bot.py:88
 msgid ""
 "Give a player 1 damage (must be the number if possible) and pass him the "
 "knife"
-msgstr ""
-"Give a player 1 damage (must be the number if possible) and pass him the "
-"knife"
+msgstr "使一位玩家强制受到一点伤害（优先打开数字标记）并将匕首交给对方"
 
 #: ../bot.py:89
 msgid "Give a 🛡/🔰 to a player and take 🗡/🔪"
-msgstr "Give a 🛡/🔰 to a player and take 🗡/🔪"
+msgstr "将 🛡/🔰 交给一名玩家并持有 🗡/🔪"
 
 #: ../bot.py:90
 msgid "Give a damage to the player attacked you"
-msgstr "Give a damage to the player attacked you"
+msgstr "使攻击你的玩家强制受到一点伤害"
 
 #: ../bot.py:91
 msgid "Take a ⚕️ and give a ⚕️ to another player"
-msgstr "Take a ⚕️ and give a ⚕️ to another player"
+msgstr ""
+"获得一柄 ⚕️ 并将另一柄 ⚕️ 交给另外一名玩家（自第二次发动起不能留给自己）"
 
 #: ../bot.py:92
 msgid "Give a (Fan) to another player"
-msgstr "Give a (Fan) to another player"
+msgstr "将【扇子】交给其他一名玩家"
 
 #: ../bot.py:93
 msgid "Give a 📕📗📘📙 to a player"
-msgstr "Give a 📕📗📘📙 to a player"
+msgstr "将一张 📕📗📘📙 交给攻击你的玩家"
 
 #: ../bot.py:122
 msgid "white"
@@ -213,7 +210,7 @@ msgstr "%s 选择了 %s"
 
 #: ../bot.py:501
 msgid "None"
-msgstr "无"
+msgstr "否"
 
 #: ../bot.py:505
 msgid "%s accept interfere?"
