@@ -145,6 +145,7 @@ class BloodBoundGame:
         self.show_winner()
 
     def show_winner(self):
+        self.log.append(_("%s is killed.") % self.victim)
         victim_rank = self.player_data[self.victim]['rank']
 
         # Skill 10
