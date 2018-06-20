@@ -149,6 +149,10 @@ class BloodBoundGame:
         victim_rank = self.player_data[self.victim]['rank']
 
         # Skill 10
+        if self.real_curse != None:
+            real_curse_book = 'curse%d' % self.real_curse
+            self.log.append(_("The real curse book is %s.") % E[real_curse_book])
+
         if abs(victim_rank) == 10:
             self.display_game_message(_("Inquisitor wins!"))
             return
@@ -163,9 +167,6 @@ class BloodBoundGame:
 
         # Skill 10
         if self.real_curse != None:
-            real_curse_book = 'curse%d' % self.real_curse
-            self.log.append(_("The real curse book is %s.") % E[real_curse_book])
-
             for player, data in self.player_data.items():
                 if (data['rank'] == self.target[winner] and
                     real_curse_book in data['item']
