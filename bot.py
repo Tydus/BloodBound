@@ -662,7 +662,7 @@ class BloodBoundGame:
         self.victim = candidate[selection]
         self.log.append(_("%s casted skill on %s") % (player, self.victim))
 
-        if 's' in self.players_data[self.victim]['token_available']:
+        if 's' in self.player_data[self.victim]['token_available']:
             forced = 's'
         else:
             forced = None
