@@ -822,32 +822,34 @@ class BloodBoundGame:
             if x != player
         ]
 
-        __, selection = yield from single_choice(
-            original_message=self.m,
-            candidate=candidate,
-            whitelist=[player],
-            text=self.generate_game_message(
-                _("%s give a curse book to a player:") % player,
-            ),
-            static_buttons=self.static_buttons,
-        )
-        target = candidate[selection]
+        while self.available_curse != []:
+            __, selection = yield from single_choice(
+                original_message=self.m,
+                candidate=list(map(E.get, self.available_curse)),
+                whitelist=[target],
+                text=self.generate_game_message(
+                    _("%s select a curse book:") % target.mention_html(),
+                ),
+                static_buttons=self.static_buttons,
+            )
+            curse = self.available_curse[selection]
 
-        __, selection = yield from single_choice(
-            original_message=self.m,
-            candidate=list(map(E.get, self.available_curse)),
-            whitelist=[target],
-            text=self.generate_game_message(
-                _("%s select a curse book:") % target.mention_html(),
-            ),
-            static_buttons=self.static_buttons,
-        )
+            __, selection = yield from single_choice(
+                original_message=self.m,
+                candidate=candidate,
+                whitelist=[player],
+                text=self.generate_game_message(
+                    _("%s give a curse book to a player:") % player,
+                ),
+                static_buttons=self.static_buttons,
+            )
+            target = candidate[selection]
 
-        curse = self.available_curse[selection]
-        self.player_data[target]['item'].append(curse)
-        self.available_curse.remove(curse)
+            self.player_data[target]['item'].append(curse)
+            self.available_curse.remove(curse)
+            candidate.remove(target)
 
-        self.log.append(_("%s gave a curse book to %s") % (player, target))
+            self.log.append(_("%s gave %s to %s") % (player, E[curse], target))
 
     def display_game_message(self, notice=''):
         self.m = self.m.edit_text(
@@ -957,20 +959,25 @@ def info_button(bot, update):
     my_index = self.players.index(user)
     after_index = (my_index + 1) % len(self.players)
     player_after = self.players[after_index]
-    rank = self.player_data[player_after]['rank']
-    after_faction = E[['b', 'r'][(rank > 0) ^ (abs(rank) == 3)]]
+    after_rank = self.player_data[player_after]['rank']
+    after_faction = E[['b', 'r'][(after_rank > 0) ^ (abs(after_rank) == 3)]]
     ret.append(_(u"Next player (%s) is %s") % (
         display_name(player_after), after_faction,
     ))
 
+    if rank == 10:
+        ret.append(_(u"Real curse book is %s" %
+            E["curse%d" % self.real_curse]
+        ))
+
     if data['checked']:
         ret.append(_(u"Checked players:"))
         for player in data['checked']:
-            rank = self.player_data[player]['rank']
+            checked_rank = self.player_data[player]['rank']
             ret.append('%s: %s%s' % (
                 player,
-                E[faction_name(rank)[0]],
-                E[str(abs(rank) % 10)],
+                E[faction_name(checked_rank)[0]],
+                E[str(abs(checked_rank) % 10)],
             ))
 
     return query.answer(u'\n'.join(ret), True)
